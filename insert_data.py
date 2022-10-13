@@ -37,11 +37,14 @@ def insert_pub(pub):
 
         # get the bourough_id
         # cur.execute(f"SELECT id FROM borough WHERE name = '{borough}'")
-        cur.execute(borough_select_sql, (borough,))
-        borough_id = cur.fetchone()
-        if borough_id is None:
+        # cur.execute(borough_select_sql, (borough,))
+        # borough_id = cur.fetchone()
+        if borough in borough_ids:
+            borough_id = borough_ids[borough]
+        else:
             cur.execute(borough_insert_sql, (borough,))
             borough_id = cur.fetchone()[0]
+            borough_ids[borough] = borough_id
 
         # save the pub details
         cur.execute(pub_sql, (name, address, postcode, borough_id))
@@ -65,6 +68,7 @@ if __name__ == '__main__':
     t1_start = process_time()
     with open('data/open_pubs.csv', 'r') as read_obj:
         csv_reader = csv.reader(read_obj)
+        borough_ids = {}
         count = 0
         for row in csv_reader:
             # INSERT INTO pub(name, address, postcode, borough)

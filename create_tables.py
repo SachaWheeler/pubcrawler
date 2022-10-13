@@ -15,13 +15,13 @@ def create_tables():
         """
         CREATE TABLE borough (
             id SERIAL PRIMARY KEY,
-            name VARCHAR(30) NOT NULL
+            name VARCHAR(40) NOT NULL
         )
         """,
         """
         CREATE TABLE pub (
             id SERIAL PRIMARY KEY,
-            name VARCHAR(70) NOT NULL,
+            name VARCHAR(90) NOT NULL,
             address VARCHAR(150) NOT NULL,
             postcode VARCHAR(10) NOT NULL,
             borough integer NOT NULL,
