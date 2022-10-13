@@ -20,8 +20,13 @@ def insert_pub(pub):
         return
     pub_sql = """INSERT INTO pub(name, address, postcode, borough)
              VALUES(%s, %s, %s, %s) RETURNING id;"""
+
     location_sql = """INSERT INTO location(pub_id, lat, long)
              VALUES(%s, %s, %s) RETURNING pub_id;"""
+
+    borough_select_sql = """SELECT id FROM borough WHERE name = %s;"""
+    borough_insert_sql = """INSERT INTO borough(name) VALUES(%s) RETURNING id;"""
+
     conn = None
     vendor_id = None
     try:
@@ -30,8 +35,16 @@ def insert_pub(pub):
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
+        # get the bourough_id
+        # cur.execute(f"SELECT id FROM borough WHERE name = '{borough}'")
+        cur.execute(borough_select_sql, (borough,))
+        borough_id = cur.fetchone()
+        if borough_id is None:
+            cur.execute(borough_insert_sql, (borough,))
+            borough_id = cur.fetchone()[0]
+
         # save the pub details
-        cur.execute(pub_sql, (name, address, postcode, borough))
+        cur.execute(pub_sql, (name, address, postcode, borough_id))
         pub_id = cur.fetchone()[0]
 
         # save the location
@@ -56,6 +69,7 @@ if __name__ == '__main__':
         for row in csv_reader:
             # INSERT INTO pub(name, address, postcode, borough)
             insert_pub(row)
+
             count += 1
             if count %500 == 0:
                 print(f" {count}")
