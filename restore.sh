@@ -1,12 +1,5 @@
 #!/bin/sh
 
-start=`date +%s`
-SECONDS=0
-local_dump=0
-prod_backup=0
-download=0
-restore=0
-migrate=0
 if [ $# -ne 1 ]
 then
     echo "Usage: `basename $0` DUMP_FILE"
@@ -21,8 +14,6 @@ else
     else
         echo "Quitting"
     fi
-    restore=$SECONDS
-
 fi
 
 echo "Done"
