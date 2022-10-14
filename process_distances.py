@@ -49,15 +49,13 @@ def process_distances():
             x += 1
             if x%1000 == 0:
                 print(x)
-            if x == 5:
-                conn.commit()
-                break
 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
         if conn is not None:
+            conn.commit()
             conn.close()
 
 if __name__ == '__main__':
