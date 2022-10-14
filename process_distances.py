@@ -31,7 +31,7 @@ def process_distances():
         params = config()
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
-        cur.execute("SELECT pub_id, lat, long FROM location ORDER BY pub_id")
+        cur.execute("SELECT pub_id, lat, lon FROM location ORDER BY pub_id")
         locations = cur.fetchall()
 
         distance_sql = """INSERT INTO distance(start_loc, end_loc, distance)
@@ -48,10 +48,14 @@ def process_distances():
                 no += 1
                 continue
             # print(a, b, distance)
-            cur.execute(distance_sql, (a[0], b[0], distance))
+            try:
+                cur.execute(distance_sql, (a[0], b[0], distance))
+                yes += 1
+            except Exception as e:
+                print(e)
+                pass
 
-            yes += 1
-            if x%1000 == 0:
+            if yes%1000 == 0:
                 print(f"{count:,}, {no:,}, {yes:,}")
 
         cur.close()

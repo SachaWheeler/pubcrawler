@@ -7,13 +7,13 @@ from config import config
 def create_tables():
     """ create tables in the PostgreSQL database"""
     commands = (
-        " DROP TABLE IF EXISTS borough CASCADE",
-        " DROP TABLE IF EXISTS pub CASCADE",
-        " DROP TABLE IF EXISTS location CASCADE",
+        # " DROP TABLE IF EXISTS borough CASCADE",
+        # " DROP TABLE IF EXISTS pub CASCADE",
+        # " DROP TABLE IF EXISTS location CASCADE",
         " DROP TABLE IF EXISTS distance CASCADE",
 
         """
-        CREATE TABLE borough (
+        CREATE TABLE IF NOT EXISTS borough (
             id SERIAL PRIMARY KEY,
             name VARCHAR(40) NOT NULL,
             UNIQUE(name)
@@ -35,7 +35,7 @@ def create_tables():
         CREATE TABLE IF NOT EXISTS location (
             pub_id SERIAL PRIMARY KEY,
             lat float NOT NULL,
-            long float NOT NULL,
+            lon float NOT NULL,
             CONSTRAINT fk_location_pub
                 FOREIGN KEY(pub_id)
                 REFERENCES pub(id)

@@ -12,16 +12,16 @@ def insert_pub(pub):
     postcode = pub[3]
     borough = pub[8]
     lat = pub[6]
-    long = pub[7]
+    lon = pub[7]
     try:
         float(lat)
-        float(long)
+        float(lon)
     except Exception as e:
         return
     pub_sql = """INSERT INTO pub(name, address, postcode, borough)
              VALUES(%s, %s, %s, %s) RETURNING id;"""
 
-    location_sql = """INSERT INTO location(pub_id, lat, long)
+    location_sql = """INSERT INTO location(pub_id, lat, lon)
              VALUES(%s, %s, %s) RETURNING pub_id;"""
 
     borough_select_sql = """SELECT id FROM borough WHERE name = %s;"""
@@ -35,23 +35,32 @@ def insert_pub(pub):
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
-        # get the bourough_id
-        # cur.execute(f"SELECT id FROM borough WHERE name = '{borough}'")
-        # cur.execute(borough_select_sql, (borough,))
-        # borough_id = cur.fetchone()
         if borough in borough_ids:
             borough_id = borough_ids[borough]
         else:
-            cur.execute(borough_insert_sql, (borough,))
+            try:
+                cur.execute(borough_insert_sql, (borough,))
+            except Exception as e:
+                print("x", e)
+                pass
             borough_id = cur.fetchone()[0]
             borough_ids[borough] = borough_id
 
         # save the pub details
-        cur.execute(pub_sql, (name, address, postcode, borough_id))
+        try:
+            cur.execute(pub_sql, (name, address, postcode, borough_id))
+        except Exception as e:
+            print("y", e)
+            pass
         pub_id = cur.fetchone()[0]
 
         # save the location
-        cur.execute(location_sql, (pub_id, lat, long))
+        try:
+            cur.execute(location_sql, (pub_id, lat, lon))
+        except Exception as e:
+            print(name, address)
+            print("z", e)
+            pass
         # commit the changes to the database
         conn.commit()
         # close communication with the database
@@ -76,7 +85,7 @@ if __name__ == '__main__':
 
             count += 1
             if count %500 == 0:
-                print(f" {count}")
+                print(f"{count:,}")
     t1_stop = process_time()
     print("time taken: :", t1_stop-t1_start)
 
