@@ -7,7 +7,7 @@ from math import sin, cos, sqrt, atan2, radians
 import itertools
 
 def get_distance(lat_a, lon_a, lat_b, lon_b):
-    R = 6373.0 * 1000# approximate radius of earth in metres
+    R = 6373.0 * 1000  # approximate radius of earth in metres
 
     lat1 = radians(lat_a)
     lon1 = radians(lon_a)
@@ -41,14 +41,14 @@ def process_distances():
         for a, b in itertools.combinations(locations, 2):
             # (1, 51.970379, 0.97934) (2, 51.958698, 1.057832)
             distance = get_distance(a[1], a[2], b[1], b[2])
-            print(a, b, distance)
-            print(a[0], b[0], distance)
-            print(distance_sql % (a[0], b[0], distance))
+            # print(a, b, distance)
+            # print(a[0], b[0], distance)
+            # print(distance_sql % (a[0], b[0], distance))
             cur.execute(distance_sql, (a[0], b[0], distance))
 
             x += 1
-            if x%1000 == 0:
-                print(x)
+            if x%10000 == 0:
+                print("{:,}".format(x))
 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
