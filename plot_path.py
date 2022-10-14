@@ -18,6 +18,18 @@ def plot_path(start, end):
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
+        initial_pubs_sql ="""
+            SELECT p.name, p.id, p.address, l.lat, l.lon
+            FROM pub p, location l
+            WHERE p.id = l.pub_id
+            AND (l.lat BETWEEN %s AND %s)
+            AND (l.lon BETWEEN %s AND %s)
+            LIMIT 10"""
+
+        next_pubs_sql = """
+
+        """
+
         # find distance between start and end
         total_dist = get_distance(start[0], start[1], end[0], end[1])
         print(total_dist)
@@ -38,19 +50,22 @@ def plot_path(start, end):
             west_bound = start[1]
 
         # find closest 5 pubs to start point in the right direction
-        cur.execute("""
-        SELECT p.name, p.address, l.lat, l.lon
-        FROM pub p, location l
-        WHERE p.id = l.pub_id
-        AND (l.lat BETWEEN %s AND %s)
-        AND (l.lon BETWEEN %s AND %s)
-        LIMIT 10""" % (south_bound, north_bound,
-                       east_bound, west_bound))
+        cur.execute(initial_pubs_sql,
+                    (south_bound, north_bound, east_bound, west_bound))
 
-        starting_points = cur.fetchall()
-        print(starting_points)
+        starting_pubs = cur.fetchall()
+        for starting_pub in starting_pubs:
+            print(starting_pub)
+            next_pubs = plot_next(starting_pub, end)
+            for next_pub in next_pubs:
+                print(next_pub)
+
 
         # foreach starting point, plot the next point
+        for starting_pub in starting_pubs:
+            # find closest 5 pubs
+            cur.execute(closest_pubs_sql, (starting_pub[1]))
+
 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
