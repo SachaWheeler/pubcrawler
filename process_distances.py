@@ -52,7 +52,7 @@ def process_distances():
                 cur.execute(distance_sql, (a[0], b[0], distance))
                 yes += 1
             except Exception as e:
-                print(e)
+                # print()
                 pass
 
             if yes%1000 == 0:

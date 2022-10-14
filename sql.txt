@@ -1,0 +1,17 @@
+select * from pub where LOWER(name) like LOWER('%Hereford arms%');
+
+id = 11206
+
+select * from borough where LOWER(name) like LOWER('%kensington%');
+
+borough_id = 105
+
+select * from pub where borough = 105;
+
+select * from distance where start_loc = 11206 order by distance;
+
+select * from distance where start_loc = 11206 order by distance limit 10;
+
+SELECT p.name, d.distance FROM pub p, distance d WHERE d.start_loc = 11206 AND d.end_loc = p.id order by distance LIMIT 10;
+
+

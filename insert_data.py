@@ -41,7 +41,7 @@ def insert_pub(pub):
             try:
                 cur.execute(borough_insert_sql, (borough,))
             except Exception as e:
-                print("x", e)
+                # print("x", e)
                 pass
             borough_id = cur.fetchone()[0]
             borough_ids[borough] = borough_id
@@ -50,7 +50,7 @@ def insert_pub(pub):
         try:
             cur.execute(pub_sql, (name, address, postcode, borough_id))
         except Exception as e:
-            print("y", e)
+            # print("y", e)
             pass
         pub_id = cur.fetchone()[0]
 
@@ -58,8 +58,8 @@ def insert_pub(pub):
         try:
             cur.execute(location_sql, (pub_id, lat, lon))
         except Exception as e:
-            print(name, address)
-            print("z", e)
+            # print(name, address)
+            # print("z", e)
             pass
         # commit the changes to the database
         conn.commit()
