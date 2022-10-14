@@ -41,6 +41,9 @@ def process_distances():
         no = 0
         yes = 0
         for a, b in itertools.combinations(locations, 2):
+            if (count%10000000 == 0 and count > 0):
+                print(f"{count:,}, {no:,}, {yes:,}")
+
             # (1, 51.970379, 0.97934) (2, 51.958698, 1.057832)
             count += 1
             distance = get_distance(a[1], a[2], b[1], b[2])
@@ -54,9 +57,6 @@ def process_distances():
             except Exception as e:
                 # print()
                 pass
-
-            if yes%1000 == 0:
-                print(f"{count:,}, {no:,}, {yes:,}")
 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
