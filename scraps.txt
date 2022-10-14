@@ -1,0 +1,5 @@
+kensington lat, lon:
+51.501888, -0.190900
+
+chelsea lat, lon:
+51.486200, -0.165340

@@ -8,6 +8,7 @@ import itertools
 
 from process_distances import get_distance
 
+KM_TO_DEGREES = 0.00904
 
 def plot_path(start, end):
     """ query data from the vendors table """
@@ -16,17 +17,40 @@ def plot_path(start, end):
         params = config()
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
-        # cur.execute("SELECT pub_id, lat, lon FROM location ORDER BY pub_id")
-
-        # process
-        print(start)
-        print(end)
 
         # find distance between start and end
         total_dist = get_distance(start[0], start[1], end[0], end[1])
         print(total_dist)
 
+        # find bounding box for first pub - 1000m
+        if start[0] < end[0]:  # going north
+            south_bound = start[0]
+            north_bound = start[0] + KM_TO_DEGREES
+        else:  # going south
+            south_bound = start[0] - KM_TO_DEGREES
+            north_bound = start[0]
+
+        if start[1] < end[1]:  # going west
+            east_bound = start[1]
+            west_bound = start[1] + KM_TO_DEGREES
+        else:  # going east
+            east_bound = start[1] - KM_TO_DEGREES
+            west_bound = start[1]
+
         # find closest 5 pubs to start point in the right direction
+        cur.execute("""
+        SELECT p.name, p.address, l.lat, l.lon
+        FROM pub p, location l
+        WHERE p.id = l.pub_id
+        AND (l.lat BETWEEN %s AND %s)
+        AND (l.lon BETWEEN %s AND %s)
+        LIMIT 10""" % (south_bound, north_bound,
+                       east_bound, west_bound))
+
+        starting_points = cur.fetchall()
+        print(starting_points)
+
+        # foreach starting point, plot the next point
 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:

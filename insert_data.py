@@ -75,7 +75,7 @@ def insert_pub(pub):
 
 if __name__ == '__main__':
     t1_start = process_time()
-    with open('data/open_pubs.csv', 'r') as read_obj:
+    with open('src_data/open_pubs.csv', 'r') as read_obj:
         csv_reader = csv.reader(read_obj)
         borough_ids = {}
         count = 0
