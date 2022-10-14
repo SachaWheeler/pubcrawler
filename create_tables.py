@@ -15,13 +15,14 @@ def create_tables():
         """
         CREATE TABLE borough (
             id SERIAL PRIMARY KEY,
-            name VARCHAR(40) NOT NULL
+            name VARCHAR(40) NOT NULL,
+            UNIQUE(name)
         )
         """,
         """
-        CREATE TABLE pub (
+        CREATE TABLE IF NOT EXISTS pub (
             id SERIAL PRIMARY KEY,
-            name VARCHAR(90) NOT NULL,
+            name VARCHAR(100) NOT NULL,
             address VARCHAR(150) NOT NULL,
             postcode VARCHAR(10) NOT NULL,
             borough integer NOT NULL,
@@ -31,20 +32,21 @@ def create_tables():
         )
         """,
         """
-        CREATE TABLE location (
+        CREATE TABLE IF NOT EXISTS location (
             pub_id SERIAL PRIMARY KEY,
-            lat float,
-            long float,
+            lat float NOT NULL,
+            long float NOT NULL,
             CONSTRAINT fk_location_pub
                 FOREIGN KEY(pub_id)
                 REFERENCES pub(id)
-            )
+        )
         """,
         """
-        CREATE TABLE distance (
+        CREATE TABLE IF NOT EXISTS distance (
             id SERIAL PRIMARY KEY,
-            start_loc integer,
-            end_loc integer,
+            start_loc integer NOT NULL,
+            end_loc integer NOT NULL,
+            distance integer NOT NULL,
             CONSTRAINT fk_start_loc
                 FOREIGN KEY(start_loc)
                 REFERENCES location(pub_id)
@@ -52,7 +54,8 @@ def create_tables():
             CONSTRAINT fk_end_loc
                 FOREIGN KEY(end_loc)
                 REFERENCES location(pub_id)
-                ON DELETE CASCADE
+                ON DELETE CASCADE,
+            UNIQUE (start_loc, end_loc)
             )
         """
     )
