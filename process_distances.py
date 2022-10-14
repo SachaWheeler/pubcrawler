@@ -37,18 +37,22 @@ def process_distances():
         distance_sql = """INSERT INTO distance(start_loc, end_loc, distance)
             VALUES(%s, %s, %s);"""
 
-        x = 0
+        count = 0
+        no = 0
+        yes = 0
         for a, b in itertools.combinations(locations, 2):
             # (1, 51.970379, 0.97934) (2, 51.958698, 1.057832)
+            count += 1
             distance = get_distance(a[1], a[2], b[1], b[2])
+            if distance > 2000 or distance < 1:  # 2,000 metres
+                no += 1
+                continue
             # print(a, b, distance)
-            # print(a[0], b[0], distance)
-            # print(distance_sql % (a[0], b[0], distance))
             cur.execute(distance_sql, (a[0], b[0], distance))
 
-            x += 1
-            if x%10000 == 0:
-                print("{:,}".format(x))
+            yes += 1
+            if x%1000 == 0:
+                print(f"{count:,}, {no:,}, {yes:,}")
 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
