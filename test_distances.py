@@ -7,9 +7,9 @@ from os.path import exists
 # The place where your 2 points are located. It will be used to create a graph from the OSM data
 # In this example, the 2 points are two addresses in Manhattan, so we choose "Manhattan"
 # It could be a bounding box too, or an area around a point
-graph_area = ("London, England, UK")
+graph_area = ("England, United Kingdom")
 
-graph_file = "London.graphml"
+graph_file = "UK.graphml"
 if not exists(graph_file):
 
     # Create the graph of the area from OSM data. It will download the data and create the graph
