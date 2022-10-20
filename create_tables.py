@@ -10,7 +10,7 @@ def create_tables():
         # " DROP TABLE IF EXISTS borough CASCADE",
         # " DROP TABLE IF EXISTS pub CASCADE",
         # " DROP TABLE IF EXISTS location CASCADE",
-        " DROP TABLE IF EXISTS distance CASCADE",
+        # " DROP TABLE IF EXISTS distance CASCADE",
 
         """
         CREATE TABLE IF NOT EXISTS borough (
