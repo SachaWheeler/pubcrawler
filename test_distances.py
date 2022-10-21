@@ -7,10 +7,15 @@ from os.path import exists
 # The place where your 2 points are located. It will be used to create a graph from the OSM data
 # In this example, the 2 points are two addresses in Manhattan, so we choose "Manhattan"
 # It could be a bounding box too, or an area around a point
-graph_area = ("England, United Kingdom")
+graph_area = ("London, England, United Kingdom")
 
-graph_file = "UK.graphml"
-if not exists(graph_file):
+graph_file = "maps/London.graphml"
+if exists(graph_file):
+
+    # Load the graph
+    G = ox.load_graphml(graph_file)
+
+else:
 
     # Create the graph of the area from OSM data. It will download the data and create the graph
     G = ox.graph_from_place(graph_area, network_type='walk')
@@ -21,10 +26,6 @@ if not exists(graph_file):
 
     # Save graph to disk if you want to reuse it
     ox.save_graphml(G, graph_file)
-else:
-
-    # Load the graph
-    G = ox.load_graphml(graph_file)
 
 # Plot the graph
 # fig, ax = ox.plot_graph(G, figsize=(10, 10), node_size=0, edge_color='y', edge_linewidth=0.2)
