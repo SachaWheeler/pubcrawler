@@ -58,6 +58,9 @@ def create_tables():
                 ON DELETE CASCADE,
             UNIQUE (start_loc, end_loc)
             )
+        """,
+        """
+        CREATE INDEX idx_distance_distance on distance(distance)
         """
     )
     conn = None

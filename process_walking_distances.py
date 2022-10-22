@@ -19,6 +19,7 @@ def process_walking():
         # london bounding box - http://bboxfinder.com/
         # -0.225157,51.439503,-0.086454,51.550010
         lon1, lat1, lon2, lat2 = -0.225157,51.439503,-0.086454,51.550010
+        st = time.time()
         cur.execute(f"""
                     SELECT d.id, l_a.lat as start_lat, l_a.lon as start_lon,
                             l_b.lat as end_lat, l_b.lon as end_lon
@@ -26,17 +27,18 @@ def process_walking():
                     WHERE l_a.pub_id = d.start_loc
                     AND l_b.pub_id = d.end_loc
 
-                    AND l_a.lon BETWEEN {lon1} AND {lon2}
-                    AND l_a.lat BETWEEN {lat1} AND {lat2}
-                    AND l_b.lon BETWEEN {lon1} AND {lon2}
-                    AND l_b.lat BETWEEN {lat1} AND {lat2}
+                    AND (l_a.lon BETWEEN {lon1} AND {lon2})
+                    AND (l_a.lat BETWEEN {lat1} AND {lat2})
+                    AND (l_b.lon BETWEEN {lon1} AND {lon2})
+                    AND (l_b.lat BETWEEN {lat1} AND {lat2})
 
                     AND d.walking_distance < 1
                     ORDER by d.distance
 
                     """)
         distances = cur.fetchall()
-        print(f"got {len(distances)} distances")
+        et = time.time()
+        print(f"got {len(distances)} distances in {int(et-st)} secs")
 
         graph_file = "maps/London.graphml"
         if exists(graph_file):
@@ -45,30 +47,28 @@ def process_walking():
             G = ox.load_graphml(graph_file)
             et = time.time()
             print(G)
-            print("Map Loaded", int(et - st), " secs")
+            print("Map Loaded", int(et - st), "secs")
 
         distance_sql = """UPDATE distance SET walking_distance = %s WHERE id = %s"""
 
         count = 0
         added = 0
         for dist in distances:
+            if count ==0:
+                print("started the loop")
+            elif count%100==0:
+                print(f"{count} tested")
             count += 1
             # (1, 51.958698, 1.057832, 51.975311, 1.05611)
             dist_id = dist[0]
             orig_coords = (dist[1], dist[2])
             dest_coords = (dist[3], dist[4])
 
-            # origin_node = ox.get_nearest_node(G, orig_coords)
-            # destination_node = ox.get_nearest_node(G, dest_coords)
-            # print(orig_coords, dest_coords)
-
             # find the nearest node to the start location. LON, LAT (X, Y), not LAT, LON
             orig_node = ox.nearest_nodes(G, orig_coords[1], orig_coords[0])# find the nearest node to the end location
             dest_node = ox.nearest_nodes(G, dest_coords[1], dest_coords[0])#  find the shortest path
-            # print(orig_node)
-            # print(dest_node)
+
             # shortest_route = nx.shortest_path(G, orig_node, dest_node, method='bellman-ford')
-            # print(shortest_route)
 
             if orig_node != dest_node:
                 added += 1
@@ -79,7 +79,6 @@ def process_walking():
                 print(orig_coords, dest_coords, f"{int(distance_in_meters)} metres")
                 # break
                 cur.execute(distance_sql, (int(distance_in_meters), dist_id))
-                # print(distance_sql % (distance_in_meters, dist_id))
 
         print(f"{count} scanned, {added} added.")
         cur.close()
