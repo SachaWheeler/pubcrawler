@@ -28,9 +28,12 @@ def process_walking():
                     AND l_b.lon BETWEEN -0.27 AND -0.06
                     AND l_b.lat BETWEEN 51.46 AND 51.52
 
+                    AND d.walking_distance < 1
+                    ORDER by d.distance
+
                     """)
         distances = cur.fetchall()
-        print("got distances")
+        print(f"got {len(distances)} distances")
 
         graph_file = "maps/London.graphml"
         if exists(graph_file):
@@ -54,10 +57,9 @@ def process_walking():
 
             # origin_node = ox.get_nearest_node(G, orig_coords)
             # destination_node = ox.get_nearest_node(G, dest_coords)
-            print(orig_coords[0], orig_coords[1])
-            print(dest_coords[0], dest_coords[1])
+            # print(orig_coords, dest_coords)
 
-            # find the nearest node to the start location
+            # find the nearest node to the start location. LON, LAT (X, Y), not LAT, LON
             orig_node = ox.nearest_nodes(G, orig_coords[1], orig_coords[0])# find the nearest node to the end location
             dest_node = ox.nearest_nodes(G, dest_coords[1], dest_coords[0])#  find the shortest path
             # print(orig_node)
@@ -67,12 +69,14 @@ def process_walking():
 
             if orig_node != dest_node:
                 added += 1
+                if added%100==0:
+                    print(f"{added} added")
                 distance_in_meters = nx.shortest_path_length(
                     G, orig_node, dest_node, weight='length')
-                print(f"{distance_in_meters} metres")
+                print(orig_coords, dest_coords, f"{int(distance_in_meters)} metres")
                 # break
                 cur.execute(distance_sql, (int(distance_in_meters), dist_id))
-                print(distance_sql % (distance_in_meters, dist_id))
+                # print(distance_sql % (distance_in_meters, dist_id))
 
         print(f"{count} scanned, {added} added.")
         cur.close()
