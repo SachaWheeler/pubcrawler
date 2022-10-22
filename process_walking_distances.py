@@ -22,16 +22,23 @@ def process_walking():
                     FROM location l_a, location l_b, distance d
                     WHERE l_a.pub_id = d.start_loc
                     AND l_b.pub_id = d.end_loc
+
+                    AND l_a.lon BETWEEN -0.27 AND -0.06
+                    AND l_a.lat BETWEEN 51.46 AND 51.52
+                    AND l_b.lon BETWEEN -0.27 AND -0.06
+                    AND l_b.lat BETWEEN 51.46 AND 51.52
+
                     """)
         distances = cur.fetchall()
         print("got distances")
 
         graph_file = "maps/London.graphml"
         if exists(graph_file):
-            print("Loading mapfile")
+            print(f"Loading mapfile: {graph_file}")
             st = time.time()
             G = ox.load_graphml(graph_file)
             et = time.time()
+            print(G)
             print("Map Loaded", int(et - st), " secs")
 
         distance_sql = """UPDATE distance SET walking_distance = %s WHERE id = %s"""
@@ -42,29 +49,28 @@ def process_walking():
             count += 1
             # (1, 51.958698, 1.057832, 51.975311, 1.05611)
             dist_id = dist[0]
-            origin_coordinates = (dist[1], dist[2])
-            destination_coordinates = (dist[3], dist[4])
+            orig_coords = (dist[1], dist[2])
+            dest_coords = (dist[3], dist[4])
 
-            # origin_node = ox.get_nearest_node(G, origin_coordinates)
-            # destination_node = ox.get_nearest_node(G, destination_coordinates)
-            print(G)
-            print(origin_coordinates[0], origin_coordinates[1])
-            print(destination_coordinates[0], destination_coordinates[1])
+            # origin_node = ox.get_nearest_node(G, orig_coords)
+            # destination_node = ox.get_nearest_node(G, dest_coords)
+            print(orig_coords[0], orig_coords[1])
+            print(dest_coords[0], dest_coords[1])
 
             # find the nearest node to the start location
-            orig_node = ox.nearest_nodes(G, origin_coordinates[1], origin_coordinates[0])# find the nearest node to the end location
-            dest_node = ox.nearest_nodes(G, destination_coordinates[1], destination_coordinates[0])#  find the shortest path
-            print(orig_node)
-            print(dest_node)
-            shortest_route = nx.shortest_path(G, orig_node, dest_node, method='bellman-ford')
-            print(shortest_route)
+            orig_node = ox.nearest_nodes(G, orig_coords[1], orig_coords[0])# find the nearest node to the end location
+            dest_node = ox.nearest_nodes(G, dest_coords[1], dest_coords[0])#  find the shortest path
+            # print(orig_node)
+            # print(dest_node)
+            # shortest_route = nx.shortest_path(G, orig_node, dest_node, method='bellman-ford')
+            # print(shortest_route)
 
-            if origin_node != destination_node:
+            if orig_node != dest_node:
                 added += 1
                 distance_in_meters = nx.shortest_path_length(
-                    G, origin_node, destination_node, weight='length')
+                    G, orig_node, dest_node, weight='length')
                 print(f"{distance_in_meters} metres")
-                break
+                # break
                 cur.execute(distance_sql, (int(distance_in_meters), dist_id))
                 print(distance_sql % (distance_in_meters, dist_id))
 
