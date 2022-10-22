@@ -47,6 +47,7 @@ def create_tables():
             start_loc integer NOT NULL,
             end_loc integer NOT NULL,
             distance integer NOT NULL,
+            walking_distance integer,
             CONSTRAINT fk_start_loc
                 FOREIGN KEY(start_loc)
                 REFERENCES location(pub_id)
