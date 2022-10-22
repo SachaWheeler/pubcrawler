@@ -16,17 +16,20 @@ def process_walking():
         params = config()
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
-        cur.execute("""
+        # london bounding box - http://bboxfinder.com/
+        # -0.225157,51.439503,-0.086454,51.550010
+        lon1, lat1, lon2, lat2 = -0.225157,51.439503,-0.086454,51.550010
+        cur.execute(f"""
                     SELECT d.id, l_a.lat as start_lat, l_a.lon as start_lon,
                             l_b.lat as end_lat, l_b.lon as end_lon
                     FROM location l_a, location l_b, distance d
                     WHERE l_a.pub_id = d.start_loc
                     AND l_b.pub_id = d.end_loc
 
-                    AND l_a.lon BETWEEN -0.27 AND -0.06
-                    AND l_a.lat BETWEEN 51.46 AND 51.52
-                    AND l_b.lon BETWEEN -0.27 AND -0.06
-                    AND l_b.lat BETWEEN 51.46 AND 51.52
+                    AND l_a.lon BETWEEN {lon1} AND {lon2}
+                    AND l_a.lat BETWEEN {lat1} AND {lat2}
+                    AND l_b.lon BETWEEN {lon1} AND {lon2}
+                    AND l_b.lat BETWEEN {lat1} AND {lat2}
 
                     AND d.walking_distance < 1
                     ORDER by d.distance
