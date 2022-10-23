@@ -9,9 +9,16 @@ import osmnx as ox
 import networkx as nx
 from os.path import exists
 
+
+def output(count, added, deleted):
+    print(f"{count} scanned, {deleted} deleted, {added} added.")
+
 def process_walking():
     """ query data from the vendors table """
     conn = None
+    count = 0
+    added = 0
+    deleted = 0
     try:
         params = config()
         conn = psycopg2.connect(**params)
@@ -40,7 +47,7 @@ def process_walking():
         et = time.time()
         print(f"got {len(distances)} distances in {int(et-st)} secs")
 
-        graph_file = "maps/London.graphml"
+        graph_file = "maps/London_zoom.graphml"
         if exists(graph_file):
             print(f"Loading mapfile: {graph_file}")
             st = time.time()
@@ -50,14 +57,14 @@ def process_walking():
             print("Map Loaded", int(et - st), "secs")
 
         distance_sql = """UPDATE distance SET walking_distance = %s WHERE id = %s"""
+        distance_delete_sql = """DELETE FROM distance WHERE id = %s"""
 
-        count = 0
-        added = 0
-        for dist in distances:
+        dist_iter = iter(distances)
+        for dist in dist_iter:
             if count ==0:
                 print("started the loop")
             elif count%100==0:
-                print(f"{count} tested")
+                output(count, added, deleted)
             count += 1
             # (1, 51.958698, 1.057832, 51.975311, 1.05611)
             dist_id = dist[0]
@@ -70,17 +77,19 @@ def process_walking():
 
             # shortest_route = nx.shortest_path(G, orig_node, dest_node, method='bellman-ford')
 
-            if orig_node != dest_node:
+            if orig_node == dest_node:
+                cur.execute(distance_delete_sql, (dist_id,))
+                deleted += 1
+            else:
                 added += 1
-                if added%100==0:
-                    print(f"{added} added")
                 distance_in_meters = nx.shortest_path_length(
                     G, orig_node, dest_node, weight='length')
                 print(orig_coords, dest_coords, f"{int(distance_in_meters)} metres")
                 # break
                 cur.execute(distance_sql, (int(distance_in_meters), dist_id))
+            next(dist_iter)
 
-        print(f"{count} scanned, {added} added.")
+        output(count, added, deleted)
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -88,6 +97,7 @@ def process_walking():
         if conn is not None:
             conn.commit()
             conn.close()
+        output(count, added, deleted)
 
 if __name__ == '__main__':
     t1_start = time.process_time()
