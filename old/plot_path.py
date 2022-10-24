@@ -7,11 +7,11 @@ from math import sin, cos, sqrt, atan2, radians
 import itertools
 
 from process_distances import get_distance
-from process_walking_distances import load_map
 
 KM_TO_DEGREES = 0.00904
 
 def plot_path(start, end):
+    """ query data from the vendors table """
     conn = None
     try:
         params = config()
@@ -26,19 +26,12 @@ def plot_path(start, end):
             AND (l.lon BETWEEN %s AND %s)
             LIMIT 10"""
 
-            """
-            SELECT latitude, longitude, SQRT(
-    POW(69.1 * (latitude - [startlat]), 2) +
-    POW(69.1 * ([startlng] - longitude) * COS(latitude / 57.3), 2)) AS distance
-FROM TableName HAVING distance < 25 ORDER BY distance;
-            """
-
         next_pubs_sql = """
 
         """
 
         # find distance between start and end
-        total_dist = int(get_distance(start[0], start[1], end[0], end[1]))
+        total_dist = get_distance(start[0], start[1], end[0], end[1])
         print(total_dist)
 
         # find bounding box for first pub - 1000m
@@ -58,8 +51,7 @@ FROM TableName HAVING distance < 25 ORDER BY distance;
 
         # find closest 5 pubs to start point in the right direction
         cur.execute(initial_pubs_sql,
-                    (south_bound, north_bound,
-                     east_bound, west_bound))
+                    (south_bound, north_bound, east_bound, west_bound))
 
         starting_pubs = cur.fetchall()
         for starting_pub in starting_pubs:
@@ -86,8 +78,7 @@ if __name__ == '__main__':
     t1_start = process_time()
 
     # collect coordinates
-    # start = input("starting coordinates (lat, long): ")
-    start = "51.5007169,-0.1847102"
+    start = input("starting coordinates (lat, long): ")
     start_lat, start_lon = start.split(',')
     try:
         start_lat = float(start_lat)
@@ -95,8 +86,7 @@ if __name__ == '__main__':
     except Exception as e:
         print(e)
         exit()
-    # end = input("ending coordinates (lat, long): ")
-    end = "51.4516815,-0.1827658"
+    end = input("ending coordinates (lat, long): ")
     end_lat, end_lon = end.split(',')
     try:
         end_lat = float(end_lat)

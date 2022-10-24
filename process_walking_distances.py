@@ -13,6 +13,18 @@ from os.path import exists
 def output(count, added, deleted):
     print(f"{count} scanned, {deleted} deleted, {added} added.")
 
+def load_map():
+    graph_file = "maps/London_zoom.graphml"
+    if exists(graph_file):
+        print(f"Loading mapfile: {graph_file}")
+        st = time.time()
+        G = ox.load_graphml(graph_file)
+        et = time.time()
+        print(G)
+        print("Map Loaded", int(et - st), "secs")
+        return G
+    exit(0)
+
 def process_walking():
     """ query data from the vendors table """
     conn = None
@@ -48,14 +60,15 @@ def process_walking():
         et = time.time()
         print(f"got {len(distances)} distances in {int(et-st)} secs")
 
-        graph_file = "maps/London_zoom.graphml"
-        if exists(graph_file):
-            print(f"Loading mapfile: {graph_file}")
-            st = time.time()
-            G = ox.load_graphml(graph_file)
-            et = time.time()
-            print(G)
-            print("Map Loaded", int(et - st), "secs")
+        G = load_map()
+        # graph_file = "maps/London_zoom.graphml"
+        # if exists(graph_file):
+            # print(f"Loading mapfile: {graph_file}")
+            # st = time.time()
+            # G = ox.load_graphml(graph_file)
+            # et = time.time()
+            # print(G)
+            # print("Map Loaded", int(et - st), "secs")
 
         distance_sql = """UPDATE distance SET walking_distance = %s WHERE id = %s"""
         distance_delete_sql = """DELETE FROM distance WHERE id = %s"""
