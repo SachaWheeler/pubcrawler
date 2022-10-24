@@ -3,3 +3,4 @@ database.ini
 databases
 cache/
 maps/
+.DS_Store

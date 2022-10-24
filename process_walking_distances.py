@@ -22,6 +22,7 @@ def process_walking():
     try:
         params = config()
         conn = psycopg2.connect(**params)
+        conn.autocommit = True
         cur = conn.cursor()
         # london bounding box - http://bboxfinder.com/
         # -0.225157,51.439503,-0.086454,51.550010
@@ -29,7 +30,7 @@ def process_walking():
         st = time.time()
         cur.execute(f"""
                     SELECT d.id, l_a.lat as start_lat, l_a.lon as start_lon,
-                            l_b.lat as end_lat, l_b.lon as end_lon
+                            l_b.lat as end_lat, l_b.lon as end_lon, d.distance
                     FROM location l_a, location l_b, distance d
                     WHERE l_a.pub_id = d.start_loc
                     AND l_b.pub_id = d.end_loc
@@ -59,8 +60,8 @@ def process_walking():
         distance_sql = """UPDATE distance SET walking_distance = %s WHERE id = %s"""
         distance_delete_sql = """DELETE FROM distance WHERE id = %s"""
 
-        dist_iter = iter(distances)
-        for dist in dist_iter:
+        # dist_iter = iter(distances)
+        for dist in distances:
             if count ==0:
                 print("started the loop")
             elif count%100==0:
@@ -84,12 +85,13 @@ def process_walking():
                 added += 1
                 distance_in_meters = nx.shortest_path_length(
                     G, orig_node, dest_node, weight='length')
-                print(orig_coords, dest_coords, f"{int(distance_in_meters)} metres")
+                print(orig_coords, dest_coords, dist[5], f"{int(distance_in_meters)} metres")
                 # break
                 cur.execute(distance_sql, (int(distance_in_meters), dist_id))
-            next(dist_iter)
+            # next(dist_iter)
 
         output(count, added, deleted)
+        conn.commit()
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
