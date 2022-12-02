@@ -9,10 +9,10 @@ import itertools
 def get_distance(lat_a, lon_a, lat_b, lon_b):
     R = 6373.0 * 1000  # approximate radius of earth in metres
 
-    lat1 = radians(lat_a)
-    lon1 = radians(lon_a)
-    lat2 = radians(lat_b)
-    lon2 = radians(lon_b)
+    lat1 = radians(float(lat_a))
+    lon1 = radians(float(lon_a))
+    lat2 = radians(float(lat_b))
+    lon2 = radians(float(lon_b))
 
     dlon = lon2 - lon1
     dlat = lat2 - lat1

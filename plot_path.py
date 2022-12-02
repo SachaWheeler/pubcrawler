@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import csv
+import pprint
 import psycopg2
 from config import config
 from time import process_time
@@ -10,37 +11,27 @@ from process_distances import get_distance
 from process_walking_distances import load_map
 
 KM_TO_DEGREES = 0.00904
+initial_pubs_sql ="""
+    SELECT p.name, p.id, p.address, l.lat, l.lon
+    FROM pub p, location l
+    WHERE p.id = l.pub_id
+    AND (l.lat BETWEEN %s AND %s)
+    AND (l.lon BETWEEN %s AND %s)
+    LIMIT 8
+    """
+next_pubs_sql ="""
+    SELECT p.name, p.id, p.address, l.lat, l.lon
+    FROM pub p, location l, distance d
+    WHERE p.id = d.end_loc
+    AND l.pub_id = d.end_loc
+    AND d.start_loc = %s
+
+    ORDER BY d.walking_distance
+    LIMIT 10
+    """
 
 def plot_path(start, end):
-    conn = None
-    try:
-        params = config()
-        conn = psycopg2.connect(**params)
-        cur = conn.cursor()
-
-        initial_pubs_sql ="""
-            SELECT p.name, p.id, p.address, l.lat, l.lon
-            FROM pub p, location l
-            WHERE p.id = l.pub_id
-            AND (l.lat BETWEEN %s AND %s)
-            AND (l.lon BETWEEN %s AND %s)
-            LIMIT 10"""
-
-            """
-            SELECT latitude, longitude, SQRT(
-    POW(69.1 * (latitude - [startlat]), 2) +
-    POW(69.1 * ([startlng] - longitude) * COS(latitude / 57.3), 2)) AS distance
-FROM TableName HAVING distance < 25 ORDER BY distance;
-            """
-
-        next_pubs_sql = """
-
-        """
-
-        # find distance between start and end
-        total_dist = int(get_distance(start[0], start[1], end[0], end[1]))
-        print(total_dist)
-
+    if len(PATHS) == 0:  # we're starting the search - find a bounding box
         # find bounding box for first pub - 1000m
         if start[0] < end[0]:  # going north
             south_bound = start[0]
@@ -59,35 +50,49 @@ FROM TableName HAVING distance < 25 ORDER BY distance;
         # find closest 5 pubs to start point in the right direction
         cur.execute(initial_pubs_sql,
                     (south_bound, north_bound,
-                     east_bound, west_bound))
+                    east_bound, west_bound))
 
-        starting_pubs = cur.fetchall()
-        for starting_pub in starting_pubs:
-            print(starting_pub)
-            next_pubs = plot_next(starting_pub, end)
-            for next_pub in next_pubs:
-                print(next_pub)
+        start_pubs = cur.fetchall()
+        # pprint.pprint(starting_pubs)
+        for pub in start_pubs:
+            # print(pub)
+            distance = get_distance(start[0], start[1], pub[3], pub[4])
+            addition = pub + (distance,)
+            PATHS.append([addition])
+        PATHS.sort(key=lambda array_tup: array_tup[0][5])  # sorts in place
+        # pprint.pprint(PATHS)
 
+    print("subsequent")
+    # foreach starting point, plot the next point
+    for idx, path in enumerate(PATHS):
+        # find closest pubs
+        last_element = len(path)-1
+        location = path[last_element]
 
-        # foreach starting point, plot the next point
-        for starting_pub in starting_pubs:
-            # find closest 5 pubs
-            cur.execute(closest_pubs_sql, (starting_pub[1]))
+        # find closest pubs
+        cur.execute(next_pubs_sql % location[1])
+        next_pubs = cur.fetchall()
+        # TODO - remove the puobs that take us further than the goal
+        pprint.pprint(f" 1 {path} ")
+        pprint.pprint(f" 2 {next_pubs}")
+        current_distance = get_distance(location[3], location[4], end_lat, end_lon)
+        for sub_idx, next_pub in enumerate(next_pubs):
+            print(sub_idx, location[3], location[4], next_pub[0], next_pub[3], next_pub[4])
+            distance_to_target = get_distance(
+                location[3], location[4],
+                next_pub[3], next_pub[4]
+            )
+        break
+    print("z")
 
-
-        cur.close()
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if conn is not None:
-            conn.close()
 
 if __name__ == '__main__':
     t1_start = process_time()
 
     # collect coordinates
-    # start = input("starting coordinates (lat, long): ")
-    start = "51.5007169,-0.1847102"
+    start = input("starting coordinates (lat, long): ")
+    if "," not in start:
+        start = "51.5007169,-0.1847102"
     start_lat, start_lon = start.split(',')
     try:
         start_lat = float(start_lat)
@@ -95,8 +100,9 @@ if __name__ == '__main__':
     except Exception as e:
         print(e)
         exit()
-    # end = input("ending coordinates (lat, long): ")
-    end = "51.4516815,-0.1827658"
+    end = input("ending coordinates (lat, long): ")
+    if "," not in end:
+        end = "51.4516815,-0.1827658"
     end_lat, end_lon = end.split(',')
     try:
         end_lat = float(end_lat)
@@ -105,8 +111,25 @@ if __name__ == '__main__':
         print(e)
         exit()
 
-    plot_path((start_lat, start_lon), (end_lat, end_lon))
+    # find distance between start and end
+    total_dist = int(get_distance(start[0], start[1], end[0], end[1]))
+    print(f" total distance: {total_dist}")
 
+    PATHS = []
+    conn = None
+    try:
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+
+        plot_path((start_lat, start_lon), (end_lat, end_lon))
+
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
 
     t1_stop = process_time()
     print("time taken: :", t1_stop-t1_start)
