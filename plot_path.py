@@ -19,15 +19,24 @@ initial_pubs_sql ="""
     AND (l.lon BETWEEN %s AND %s)
     LIMIT 8
     """
+
 next_pubs_sql ="""
-    SELECT p.name, p.id, p.address, l.lat, l.lon
+select * from (
+    SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance
     FROM pub p, location l, distance d
     WHERE p.id = d.end_loc
     AND l.pub_id = d.end_loc
     AND d.start_loc = %s
 
-    ORDER BY d.walking_distance
-    LIMIT 10
+    UNION ALL
+
+    SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance
+    FROM pub p, location l, distance d
+    WHERE p.id = d.start_loc
+    AND l.pub_id = d.start_loc
+    AND d.end_loc = %s
+    ) t order by 6
+
     """
 
 def plot_path(start, end):
@@ -70,18 +79,21 @@ def plot_path(start, end):
         location = path[last_element]
 
         # find closest pubs
-        cur.execute(next_pubs_sql % location[1])
+        cur.execute(next_pubs_sql % (location[1], location[1]))
         next_pubs = cur.fetchall()
         # TODO - remove the puobs that take us further than the goal
         pprint.pprint(f" 1 {path} ")
-        pprint.pprint(f" 2 {next_pubs}")
+        # pprint.pprint(f" 2 {next_pubs}")
         current_distance = get_distance(location[3], location[4], end_lat, end_lon)
         for sub_idx, next_pub in enumerate(next_pubs):
-            print(sub_idx, location[3], location[4], next_pub[0], next_pub[3], next_pub[4])
+            if sub_idx == 10:
+                break
             distance_to_target = get_distance(
                 location[3], location[4],
                 next_pub[3], next_pub[4]
             )
+            print(current_distance, distance_to_target)
+            print(sub_idx, location[3], location[4], next_pub[0], next_pub[3], next_pub[4])
         break
     print("z")
 
