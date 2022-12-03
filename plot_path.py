@@ -39,63 +39,59 @@ select * from (
 
     """
 
-def plot_path(start, end):
-    if len(PATHS) == 0:  # we're starting the search - find a bounding box
-        # find bounding box for first pub - 1000m
-        if start[0] < end[0]:  # going north
-            south_bound = start[0]
-            north_bound = start[0] + KM_TO_DEGREES
-        else:  # going south
-            south_bound = start[0] - KM_TO_DEGREES
-            north_bound = start[0]
+def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
+    # find bounding box for first pub - 1000m
+    if start[0] < end[0]:  # going north
+        south_bound = start[0]
+        north_bound = start[0] + KM_TO_DEGREES
+    else:  # going south
+        south_bound = start[0] - KM_TO_DEGREES
+        north_bound = start[0]
 
-        if start[1] < end[1]:  # going west
-            east_bound = start[1]
-            west_bound = start[1] + KM_TO_DEGREES
-        else:  # going east
-            east_bound = start[1] - KM_TO_DEGREES
-            west_bound = start[1]
+    if start[1] < end[1]:  # going west
+        east_bound = start[1]
+        west_bound = start[1] + KM_TO_DEGREES
+    else:  # going east
+        east_bound = start[1] - KM_TO_DEGREES
+        west_bound = start[1]
 
-        # find closest 5 pubs to start point in the right direction
-        cur.execute(initial_pubs_sql,
-                    (south_bound, north_bound,
-                    east_bound, west_bound))
+    # find closest 5 pubs to start point in the right direction
+    cur.execute(initial_pubs_sql,
+                (south_bound, north_bound,
+                 east_bound, west_bound))
 
-        start_pubs = cur.fetchall()
-        # pprint.pprint(starting_pubs)
-        for pub in start_pubs:
-            # print(pub)
-            distance = get_distance(start[0], start[1], pub[3], pub[4])
-            addition = pub + (distance,)
-            PATHS.append([addition])
-        PATHS.sort(key=lambda array_tup: array_tup[0][5])  # sorts in place
-        # pprint.pprint(PATHS)
+    start_pubs = cur.fetchall()
+    # pprint.pprint(starting_pubs)
+    for pub in start_pubs:
+        # print(pub)
+        distance = get_distance(start[0], start[1], pub[3], pub[4])
+        addition = pub + (distance,)
+        PATHS.append([addition])
+    PATHS.sort(key=lambda array_tup: array_tup[0][5])  # sorts in place
 
-    print("subsequent")
-    # foreach starting point, plot the next point
-    for idx, path in enumerate(PATHS):
-        # find closest pubs
-        last_element = len(path)-1
-        location = path[last_element]
+def plot_next_steps(start, end):  # ((pub tuple), (end_lat, end_lon))
+    # find closest pubs
+    # pprint.pprint(start)
+    cur.execute(next_pubs_sql % (start[1], start[1]))
+    next_pubs = cur.fetchall()
 
-        # find closest pubs
-        cur.execute(next_pubs_sql % (location[1], location[1]))
-        next_pubs = cur.fetchall()
-        # TODO - remove the puobs that take us further than the goal
-        pprint.pprint(f" 1 {path} ")
-        # pprint.pprint(f" 2 {next_pubs}")
-        current_distance = get_distance(location[3], location[4], end_lat, end_lon)
-        for sub_idx, next_pub in enumerate(next_pubs):
-            if sub_idx == 10:
-                break
-            distance_to_target = get_distance(
-                location[3], location[4],
-                next_pub[3], next_pub[4]
-            )
-            print(current_distance, distance_to_target)
-            print(sub_idx, location[3], location[4], next_pub[0], next_pub[3], next_pub[4])
-        break
-    print("z")
+    current_distance = get_distance(start[3], start[4], end[0], end[1])
+    next_count = 0
+    next_steps = []
+    for sub_idx, next_pub in enumerate(next_pubs):
+        pub_distance_to_target = get_distance(
+            next_pub[3], next_pub[4],
+            end[0], end[1]
+        )
+        if current_distance - pub_distance_to_target <= 0:
+            # if further away from target
+            continue
+        next_count += 1
+        next_steps.append(next_pub)
+        if next_count == 5:
+            break
+
+    return next_steps
 
 
 if __name__ == '__main__':
@@ -134,7 +130,19 @@ if __name__ == '__main__':
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
-        plot_path((start_lat, start_lon), (end_lat, end_lon))
+        starting_points((start_lat, start_lon), (end_lat, end_lon))
+
+        for idx, pub in enumerate(PATHS):
+            next_pub = pub[-1]
+            pprint.pprint(pub)
+            pprint.pprint(next_pub)
+            print("xx")
+
+            next_paths = plot_next_steps(
+                next_pub, (end_lat, end_lon)
+            )
+            pprint.pprint(next_paths)
+            PATHS[idx][-1].append(next_paths)
 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
