@@ -102,7 +102,7 @@ if __name__ == '__main__':
     t1_start = process_time()
 
     # collect coordinates
-    start = input("starting coordinates (lat, long): ")
+    start = ""  # input("starting coordinates (lat, long): ")
     if "," not in start:
         start = "51.5007169,-0.1847102"
     start_lat, start_lon = start.split(',')
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     except Exception as e:
         print(e)
         exit()
-    end = input("ending coordinates (lat, long): ")
+    end = ""  # input("ending coordinates (lat, long): ")
     if "," not in end:
         end = "51.4516815,-0.1827658"
     end_lat, end_lon = end.split(',')
