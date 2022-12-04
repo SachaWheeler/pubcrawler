@@ -10,6 +10,42 @@ import itertools
 from process_distances import get_distance
 from process_walking_distances import load_map
 
+from anytree import Node, RenderTree
+
+
+class Pub:
+    def __init__(self, id=None, name=None, address=None,
+                 lat=None, lon=None, walking_distance=None):
+        self.id = id
+        self.name = name
+        self.address = address
+        self.lat = lat
+        self.lon = lon
+        self.walking_distance = walking_distance
+
+    def __str__(self):
+        return f"{self.name}, {self.address}"
+
+    def __hash__(self):
+        return hash((self.name, self.id))
+
+    def __eq__(self, other):
+        return (self.name, self.id) == (other.name, other.id)
+
+
+def tuple_to_pub(pub_tuple=None):
+    if pub_tuple is None:
+        return None
+    (name, id, address, lat, lon, walking_distance) = pub_tuple
+    return Pub(
+        id = id,
+        name = name,
+        address = address,
+        lat = lat,
+        lon = lon,
+        walking_distance = walking_distance
+    )
+
 KM_TO_DEGREES = 0.00904
 initial_pubs_sql ="""
     SELECT p.name, p.id, p.address, l.lat, l.lon
@@ -40,11 +76,14 @@ select * from (
     """
 
 def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
+    paths = []
     # find bounding box for first pub - 1000m
     if start[0] < end[0]:  # going north
+        # print("north")
         south_bound = start[0]
         north_bound = start[0] + KM_TO_DEGREES
     else:  # going south
+        # print("south")
         south_bound = start[0] - KM_TO_DEGREES
         north_bound = start[0]
 
@@ -64,30 +103,32 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
     # pprint.pprint(starting_pubs)
     for pub in start_pubs:
         # print(pub)
-        distance = get_distance(start[0], start[1], pub[3], pub[4])
-        addition = pub + (distance,)
-        PATHS.append([addition])
-    PATHS.sort(key=lambda array_tup: array_tup[0][5])  # sorts in place
+        # distance = get_distance(start[0], start[1], pub[3], pub[4])
+        paths.append(pub)
+    # paths.sort(key=lambda array_tup: array_tup[0][5])  # sorts in place
+    return paths
 
 def plot_next_steps(start, end):  # ((pub tuple), (end_lat, end_lon))
     # find closest pubs
     # pprint.pprint(start)
-    cur.execute(next_pubs_sql % (start[1], start[1]))
+    cur.execute(next_pubs_sql % (start.id, start.id))
     next_pubs = cur.fetchall()
 
-    current_distance = get_distance(start[3], start[4], end[0], end[1])
+    current_distance = get_distance(start.lat, start.lon, end[0], end[1])
     next_count = 0
     next_steps = []
     for sub_idx, next_pub in enumerate(next_pubs):
+        # pprint.pprint(next_pub)
+        pub_obj = tuple_to_pub(next_pub)
         pub_distance_to_target = get_distance(
-            next_pub[3], next_pub[4],
+            pub_obj.lat, pub_obj.lon,
             end[0], end[1]
         )
         if current_distance - pub_distance_to_target <= 0:
             # if further away from target
             continue
         next_count += 1
-        next_steps.append(next_pub)
+        next_steps.append(pub_obj)
         if next_count == 5:
             break
 
@@ -123,26 +164,24 @@ if __name__ == '__main__':
     total_dist = int(get_distance(start[0], start[1], end[0], end[1]))
     print(f" total distance: {total_dist}")
 
-    PATHS = []
     conn = None
     try:
         params = config()
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
-        starting_points((start_lat, start_lon), (end_lat, end_lon))
+        pubcrawl = Node(f"({start_lat}, {start_lon}), ({end_lat}, {end_lon})")
 
-        for idx, pub in enumerate(PATHS):
-            next_pub = pub[-1]
-            pprint.pprint(pub)
-            pprint.pprint(next_pub)
-            print("xx")
+        for pub in starting_points((start_lat, start_lon), (end_lat, end_lon)):
+            dist = get_distance(start_lat, start_lon, pub[3], pub[4])
+            pub_obj = tuple_to_pub(pub + (dist,))
+            node = Node(pub_obj, parent=pubcrawl)
 
-            next_paths = plot_next_steps(
-                next_pub, (end_lat, end_lon)
-            )
-            pprint.pprint(next_paths)
-            PATHS[idx][-1].append(next_paths)
+            for next_pub in plot_next_steps( pub_obj, (end_lat, end_lon)):
+                Node(next_pub, parent=node)
+
+        for pre, fill, node in RenderTree(pubcrawl):
+            print("%s%s" % (pre, node.name))
 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
