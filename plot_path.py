@@ -111,6 +111,7 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
         distance = int(get_distance(start[0], start[1], pub[3], pub[4]))
         paths.append(pub + (distance,))
     paths.sort(key=lambda array_tup: array_tup[0][5])  # sorts in place
+    # print([tuple_to_pub(pub) for pub in paths])
     return [tuple_to_pub(pub) for pub in paths]
 
 def plot_next_steps(this, end):  # ((pub object), (end_lat, end_lon))
