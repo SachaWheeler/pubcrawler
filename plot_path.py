@@ -6,25 +6,33 @@ from config import config
 from time import process_time
 from math import sin, cos, sqrt, atan2, radians
 import itertools
+import re
 
 from process_distances import get_distance
 from process_walking_distances import load_map
 
-from anytree import Node, RenderTree
+from anytree import Node, RenderTree, PreOrderIter
 
+
+MAX_RECURSION_LEVEL = 10
+MAX_CHILD_COUNT = 2
+
+SACHA = "51.5007169,-0.1847102"
+BROMPTON = "51.4840451,-0.1919901"
+LIZZIE = "51.5447774,-0.1184278"
 
 class Pub:
     def __init__(self, id=None, name=None, address=None,
                  lat=None, lon=None, walking_distance=None):
         self.id = id
         self.name = name
-        self.address = address
+        self.address = address.replace("LONDON", "").replace("PUBLIC HOUSE, ", "").replace("PUBLIC HOUSE", "").replace("Public House, ", "").replace("Public House", "")
         self.lat = lat
         self.lon = lon
         self.walking_distance = walking_distance
 
     def __str__(self):
-        return f"{self.name}, {self.address}"
+        return f"{self.name}, {self.address}, {self.walking_distance}m"
 
     def __hash__(self):
         return hash((self.name, self.id))
@@ -79,11 +87,9 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
     paths = []
     # find bounding box for first pub - 1000m
     if start[0] < end[0]:  # going north
-        # print("north")
         south_bound = start[0]
         north_bound = start[0] + KM_TO_DEGREES
     else:  # going south
-        # print("south")
         south_bound = start[0] - KM_TO_DEGREES
         north_bound = start[0]
 
@@ -102,34 +108,30 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
     start_pubs = cur.fetchall()
     # pprint.pprint(starting_pubs)
     for pub in start_pubs:
-        # print(pub)
-        # distance = get_distance(start[0], start[1], pub[3], pub[4])
-        paths.append(pub)
-    # paths.sort(key=lambda array_tup: array_tup[0][5])  # sorts in place
-    return paths
+        distance = int(get_distance(start[0], start[1], pub[3], pub[4]))
+        paths.append(pub + (distance,))
+    paths.sort(key=lambda array_tup: array_tup[0][5])  # sorts in place
+    return [tuple_to_pub(pub) for pub in paths]
 
-def plot_next_steps(start, end):  # ((pub tuple), (end_lat, end_lon))
+def plot_next_steps(this, end):  # ((pub object), (end_lat, end_lon))
     # find closest pubs
-    # pprint.pprint(start)
-    cur.execute(next_pubs_sql % (start.id, start.id))
+    cur.execute(next_pubs_sql % (this.id, this.id))
     next_pubs = cur.fetchall()
 
-    current_distance = get_distance(start.lat, start.lon, end[0], end[1])
+    current_distance = get_distance(this.lat, this.lon, end[0], end[1])
     next_count = 0
     next_steps = []
     for sub_idx, next_pub in enumerate(next_pubs):
-        # pprint.pprint(next_pub)
         pub_obj = tuple_to_pub(next_pub)
         pub_distance_to_target = get_distance(
             pub_obj.lat, pub_obj.lon,
             end[0], end[1]
         )
-        if current_distance - pub_distance_to_target <= 0:
-            # if further away from target
+        if current_distance - pub_distance_to_target <= 0: # if further away from target
             continue
         next_count += 1
         next_steps.append(pub_obj)
-        if next_count == 5:
+        if next_count == MAX_CHILD_COUNT:
             break
 
     return next_steps
@@ -141,7 +143,7 @@ if __name__ == '__main__':
     # collect coordinates
     start = ""  # input("starting coordinates (lat, long): ")
     if "," not in start:
-        start = "51.5007169,-0.1847102"
+        start = SACHA
     start_lat, start_lon = start.split(',')
     try:
         start_lat = float(start_lat)
@@ -151,7 +153,7 @@ if __name__ == '__main__':
         exit()
     end = ""  # input("ending coordinates (lat, long): ")
     if "," not in end:
-        end = "51.4516815,-0.1827658"
+        end = BROMPTON
     end_lat, end_lon = end.split(',')
     try:
         end_lat = float(end_lat)
@@ -173,12 +175,13 @@ if __name__ == '__main__':
         pubcrawl = Node(f"({start_lat}, {start_lon}), ({end_lat}, {end_lon})")
 
         for pub in starting_points((start_lat, start_lon), (end_lat, end_lon)):
-            dist = get_distance(start_lat, start_lon, pub[3], pub[4])
-            pub_obj = tuple_to_pub(pub + (dist,))
-            node = Node(pub_obj, parent=pubcrawl)
+            node = Node(pub, parent=pubcrawl)
 
-            for next_pub in plot_next_steps( pub_obj, (end_lat, end_lon)):
-                Node(next_pub, parent=node)
+        for pub_node in PreOrderIter(pubcrawl, maxlevel=MAX_RECURSION_LEVEL):
+            if isinstance(pub_node.name, str):
+                continue
+            for next_pub in plot_next_steps( pub_node.name, (end_lat, end_lon)):
+                Node(next_pub, parent=pub_node)
 
         for pre, fill, node in RenderTree(pubcrawl):
             print("%s%s" % (pre, node.name))
