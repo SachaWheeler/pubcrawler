@@ -1,7 +1,9 @@
 #!/usr/bin/python
 import csv
 import psycopg2
-from config import config
+from config import (config,
+                    LON_1, LAT_1, LON_2, LAT_2,
+                    MAP_NAME)
 import time
 from math import sin, cos, sqrt, atan2, radians
 import itertools
@@ -14,7 +16,7 @@ def output(count, added, skipped):
     print(f"{count} scanned, {skipped} skipped, {added} added.")
 
 def load_map():
-    graph_file = "maps/London_zoom.graphml"
+    graph_file = f"maps/{MAP_NAME}.graphml"
     if exists(graph_file):
         print(f"Loading mapfile: {graph_file}")
         st = time.time()
@@ -41,7 +43,7 @@ def process_walking():
         # -0.213809,51.469617,-0.095705,51.547397
         # -0.257223,51.426081,-0.067022,51.551354
         # -0.226637,51.519436,-0.097547,51.604169
-        lon1, lat1, lon2, lat2 = -0.226637,51.519436,-0.097547,51.604169
+        lon1, lat1, lon2, lat2 = LON_1, LAT_1, LON_2, LAT_2
         st = time.time()
         cur.execute(f"""
                     SELECT d.id,
@@ -66,17 +68,7 @@ def process_walking():
         print(f"got {len(distances)} distances in {int(et-st)} secs")
 
         G = load_map()
-        # graph_file = "maps/London_zoom.graphml"
-        # if exists(graph_file):
-            # print(f"Loading mapfile: {graph_file}")
-            # st = time.time()
-            # G = ox.load_graphml(graph_file)
-            # et = time.time()
-            # print(G)
-            # print("Map Loaded", int(et - st), "secs")
-
         distance_sql = """UPDATE distance SET walking_distance = %s WHERE id = %s"""
-        # distance_delete_sql = """DELETE FROM distance WHERE id = %s"""
 
         # dist_iter = iter(distances)
         for dist in distances:
@@ -97,16 +89,12 @@ def process_walking():
             # shortest_route = nx.shortest_path(G, orig_node, dest_node, method='bellman-ford')
 
             if orig_node == dest_node:
-                # cur.execute(distance_delete_sql, (dist_id,))
                 skipped += 1
             else:
                 added += 1
                 distance_in_meters = nx.shortest_path_length(
                     G, orig_node, dest_node, weight='length')
-                # print(orig_coords, dest_coords, dist[5], f"{int(distance_in_meters)} metres")
-                # break
                 cur.execute(distance_sql, (int(distance_in_meters), dist_id))
-            # next(dist_iter)
 
         output(count, added, skipped)
         conn.commit()
