@@ -10,8 +10,8 @@ import networkx as nx
 from os.path import exists
 
 
-def output(count, added, deleted):
-    print(f"{count} scanned, {deleted} deleted, {added} added.")
+def output(count, added, skipped):
+    print(f"{count} scanned, {skipped} skipped, {added} added.")
 
 def load_map():
     graph_file = "maps/London_zoom.graphml"
@@ -30,7 +30,7 @@ def process_walking():
     conn = None
     count = 0
     added = 0
-    deleted = 0
+    skipped = 0
     try:
         params = config()
         conn = psycopg2.connect(**params)
@@ -38,11 +38,16 @@ def process_walking():
         cur = conn.cursor()
         # london bounding box - http://bboxfinder.com/
         # -0.225157,51.439503,-0.086454,51.550010
-        lon1, lat1, lon2, lat2 = -0.225157,51.439503,-0.086454,51.550010
+        # -0.213809,51.469617,-0.095705,51.547397
+        # -0.257223,51.426081,-0.067022,51.551354
+        # -0.226637,51.519436,-0.097547,51.604169
+        lon1, lat1, lon2, lat2 = -0.226637,51.519436,-0.097547,51.604169
         st = time.time()
         cur.execute(f"""
-                    SELECT d.id, l_a.lat as start_lat, l_a.lon as start_lon,
-                            l_b.lat as end_lat, l_b.lon as end_lon, d.distance
+                    SELECT d.id,
+                        l_a.lat as start_lat, l_a.lon as start_lon,
+                        l_b.lat as end_lat,   l_b.lon as end_lon,
+                        d.distance
                     FROM location l_a, location l_b, distance d
                     WHERE l_a.pub_id = d.start_loc
                     AND l_b.pub_id = d.end_loc
@@ -71,14 +76,14 @@ def process_walking():
             # print("Map Loaded", int(et - st), "secs")
 
         distance_sql = """UPDATE distance SET walking_distance = %s WHERE id = %s"""
-        distance_delete_sql = """DELETE FROM distance WHERE id = %s"""
+        # distance_delete_sql = """DELETE FROM distance WHERE id = %s"""
 
         # dist_iter = iter(distances)
         for dist in distances:
             if count ==0:
                 print("started the loop")
             elif count%100==0:
-                output(count, added, deleted)
+                output(count, added, skipped)
             count += 1
             # (1, 51.958698, 1.057832, 51.975311, 1.05611)
             dist_id = dist[0]
@@ -92,18 +97,18 @@ def process_walking():
             # shortest_route = nx.shortest_path(G, orig_node, dest_node, method='bellman-ford')
 
             if orig_node == dest_node:
-                cur.execute(distance_delete_sql, (dist_id,))
-                deleted += 1
+                # cur.execute(distance_delete_sql, (dist_id,))
+                skipped += 1
             else:
                 added += 1
                 distance_in_meters = nx.shortest_path_length(
                     G, orig_node, dest_node, weight='length')
-                print(orig_coords, dest_coords, dist[5], f"{int(distance_in_meters)} metres")
+                # print(orig_coords, dest_coords, dist[5], f"{int(distance_in_meters)} metres")
                 # break
                 cur.execute(distance_sql, (int(distance_in_meters), dist_id))
             # next(dist_iter)
 
-        output(count, added, deleted)
+        output(count, added, skipped)
         conn.commit()
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
@@ -112,7 +117,7 @@ def process_walking():
         if conn is not None:
             conn.commit()
             conn.close()
-        output(count, added, deleted)
+        output(count, added, skipped)
 
 if __name__ == '__main__':
     t1_start = time.process_time()

@@ -17,16 +17,18 @@ from anytree import Node, RenderTree, PreOrderIter
 MAX_RECURSION_LEVEL = 10
 MAX_CHILD_COUNT = 2
 
-SACHA = "51.5007169,-0.1847102"
-BROMPTON = "51.4840451,-0.1919901"
-LIZZIE = "51.5447774,-0.1184278"
+SACHA           = "51.5007169,-0.1847102"
+BROMPTON        = "51.4840451,-0.1919901"
+SPORTING_PAGE   = "51.4848277,-0.1830941"
+LIZZIE          = "51.5447774,-0.1184278"
+LOTTIE          = "51.5359589,-0.2059297"
 
 class Pub:
     def __init__(self, id=None, name=None, address=None,
                  lat=None, lon=None, walking_distance=None):
         self.id = id
         self.name = name
-        self.address = address.replace("LONDON", "").replace("PUBLIC HOUSE, ", "").replace("PUBLIC HOUSE", "").replace("Public House, ", "").replace("Public House", "")
+        self.address = address.replace("LONDON", "").replace("PUBLIC HOUSE, ", "").replace("PUBLIC HOUSE", "").replace("Public House, ", "").replace("Public House", "").replace(" ,", "")
         self.lat = lat
         self.lon = lon
         self.walking_distance = walking_distance
@@ -86,27 +88,46 @@ select * from (
 def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
     paths = []
     # find bounding box for first pub - 1000m
+    print("starting points:", start, end)
     if start[0] < end[0]:  # going north
+        print("north")
         south_bound = start[0]
         north_bound = start[0] + KM_TO_DEGREES
     else:  # going south
+        print("south")
         south_bound = start[0] - KM_TO_DEGREES
         north_bound = start[0]
 
     if start[1] < end[1]:  # going west
+        print("west")
         east_bound = start[1]
-        west_bound = start[1] + KM_TO_DEGREES
+        west_bound = start[1] - KM_TO_DEGREES
     else:  # going east
-        east_bound = start[1] - KM_TO_DEGREES
+        print("east")
+        east_bound = start[1] + KM_TO_DEGREES
         west_bound = start[1]
+    # print(f"east bound: {east_bound}")
+    # print(f"west bound: {west_bound}")
+    # print(f"south bound: {south_bound}")
+    # print(f"north bound: {north_bound}")
+    # print(f"north east: {north_bound}, {east_bound}")
+    # print(f"north west: {north_bound}, {west_bound}")
+    # print(f"south west: {south_bound}, {west_bound}")
+    # print(f"south east: {south_bound}, {east_bound}")
+    # exit(0)
 
     # find closest 5 pubs to start point in the right direction
+    print(initial_pubs_sql % (
+        "{:.5f}".format(south_bound),
+        "{:.5f}".format(north_bound),
+        "{:.5f}".format(east_bound),
+        "{:.5f}".format(west_bound)))
     cur.execute(initial_pubs_sql,
                 (south_bound, north_bound,
                  east_bound, west_bound))
 
     start_pubs = cur.fetchall()
-    # pprint.pprint(starting_pubs)
+    pprint.pprint(start_pubs)
     for pub in start_pubs:
         distance = int(get_distance(start[0], start[1], pub[3], pub[4]))
         paths.append(pub + (distance,))
@@ -144,7 +165,7 @@ if __name__ == '__main__':
     # collect coordinates
     start = ""  # input("starting coordinates (lat, long): ")
     if "," not in start:
-        start = SACHA
+        start = LIZZIE
     start_lat, start_lon = start.split(',')
     try:
         start_lat = float(start_lat)
@@ -154,7 +175,7 @@ if __name__ == '__main__':
         exit()
     end = ""  # input("ending coordinates (lat, long): ")
     if "," not in end:
-        end = BROMPTON
+        end = LOTTIE
     end_lat, end_lon = end.split(',')
     try:
         end_lat = float(end_lat)
@@ -164,7 +185,8 @@ if __name__ == '__main__':
         exit()
 
     # find distance between start and end
-    total_dist = int(get_distance(start[0], start[1], end[0], end[1]))
+    total_dist = int(get_distance(start_lat, start_lon, end_lat, end_lon))
+    print(start_lat, start_lon, end_lat, end_lon)
     print(f" total distance: {total_dist}")
 
     conn = None

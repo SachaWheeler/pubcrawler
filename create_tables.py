@@ -61,6 +61,10 @@ def create_tables():
         """,
         """
         CREATE INDEX idx_distance_distance on distance(distance)
+        CREATE INDEX idx_distance_walking_distance on distance(walking_distance)
+
+        CREATE INDEX idx_location_lat on location(lat)
+        CREATE INDEX idx_location_lon on location(lon)
         """
     )
     conn = None

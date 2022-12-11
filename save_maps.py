@@ -3,6 +3,7 @@ import networkx as nx
 from datetime import timedelta
 from os.path import exists
 import time
+from config import LON_1, LAT_1, LON_2, LAT_2
 
 
 st = time.time()
@@ -11,16 +12,14 @@ st = time.time()
 # In this example, the 2 points are two addresses in Manhattan, so we choose "Manhattan"
 # It could be a bounding box too, or an area around a point
 
-graph_file = "maps/London_zoom.graphml"
+graph_file = "maps/London_central.graphml"
 if exists(graph_file):
     print(f"mapfile {graph_file} exists")
     exit(0)
 
 print("Creating mapfile")
 # Create the graph of the area from OSM data. It will download the data and create the graph
-lon1, lat1, lon2, lat2 = -0.225157,51.439503,-0.086454,51.550010
-# G = ox.graph_from_bbox(originCord[0], destCords[0], originCord[1], destCords[1], network_type='drive')
-G = ox.graph_from_bbox(lat2, lat1, lon2, lon1, network_type='walk')
+G = ox.graph_from_bbox(LON_1, LAT_1, LON_2, LAT_2, network_type='walk')
 
 # G = ox.graph_from_place(graph_area, network_type='walk')
 
