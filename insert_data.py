@@ -7,6 +7,7 @@ from time import process_time
 
 def insert_pub(pub):
     """ insert a new pub into the pub table """
+    fsa_id = pub[0]
     name = pub[1]
     address = pub[2]
     postcode = pub[3]
@@ -18,8 +19,8 @@ def insert_pub(pub):
         float(lon)
     except Exception as e:
         return
-    pub_sql = """INSERT INTO pub(name, address, postcode, borough)
-             VALUES(%s, %s, %s, %s) RETURNING id;"""
+    pub_sql = """INSERT INTO pub(fsa_id, name, address, postcode, borough)
+             VALUES(%s, %s, %s, %s, %s) RETURNING id;"""
 
     location_sql = """INSERT INTO location(pub_id, lat, lon)
              VALUES(%s, %s, %s) RETURNING pub_id;"""
@@ -48,7 +49,7 @@ def insert_pub(pub):
 
         # save the pub details
         try:
-            cur.execute(pub_sql, (name, address, postcode, borough_id))
+            cur.execute(pub_sql, (fsa_id, name, address, postcode, borough_id))
         except Exception as e:
             # print("y", e)
             pass
