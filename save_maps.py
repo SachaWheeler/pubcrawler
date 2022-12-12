@@ -10,8 +10,9 @@ st = time.time()
 
 ox.config(use_cache=True,
           log_console=True,
-          # overpass_endpoint="https://overpass.kumi.systems/api/",
+          #overpass_endpoint="https://overpass.kumi.systems/api/",
           overpass_endpoint="http://overpass-api.de/api",
+          # overpass_endpoint="https://z.overpass-api.de/api",
          )
 
 # The place where your 2 points are located. It will be used to create a graph from the OSM data
