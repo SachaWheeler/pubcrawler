@@ -33,6 +33,8 @@ def process_walking():
     count = 0
     added = 0
     skipped = 0
+
+    closest_node = {}
     try:
         params = config()
         conn = psycopg2.connect(**params)
@@ -78,8 +80,16 @@ def process_walking():
             dest_coords = (dist[3], dist[4])
 
             # find the nearest node to the start location. LON, LAT (X, Y), not LAT, LON
-            orig_node = ox.nearest_nodes(G, orig_coords[1], orig_coords[0])# find the nearest node to the end location
-            dest_node = ox.nearest_nodes(G, dest_coords[1], dest_coords[0])#  find the shortest path
+            if orig_coords in closest_node:
+                orig_node = closest_node[orig_coords]
+            else:
+                orig_node = ox.nearest_nodes(G, orig_coords[1], orig_coords[0])# find the nearest node to the end location
+                closest_node[orig_coords] = orig_node
+            if dest_coords in closest_node:
+                dest_coords = closest_node[dest_coords]
+            else:
+                dest_node = ox.nearest_nodes(G, dest_coords[1], dest_coords[0])#  find the shortest path
+                closest_node[dest_coords] = dest_node
 
             # shortest_route = nx.shortest_path(G, orig_node, dest_node, method='bellman-ford')
 
