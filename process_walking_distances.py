@@ -38,12 +38,6 @@ def process_walking():
         conn = psycopg2.connect(**params)
         conn.autocommit = True
         cur = conn.cursor()
-        # london bounding box - http://bboxfinder.com/
-        # -0.225157,51.439503,-0.086454,51.550010
-        # -0.213809,51.469617,-0.095705,51.547397
-        # -0.257223,51.426081,-0.067022,51.551354
-        # -0.226637,51.519436,-0.097547,51.604169
-        lon1, lat1, lon2, lat2 = LON_1, LAT_1, LON_2, LAT_2
         st = time.time()
         cur.execute(f"""
                     SELECT d.id,
@@ -54,15 +48,16 @@ def process_walking():
                     WHERE l_a.pub_id = d.start_loc
                     AND l_b.pub_id = d.end_loc
 
-                    AND (l_a.lon BETWEEN {lon1} AND {lon2})
-                    AND (l_a.lat BETWEEN {lat1} AND {lat2})
-                    AND (l_b.lon BETWEEN {lon1} AND {lon2})
-                    AND (l_b.lat BETWEEN {lat1} AND {lat2})
+                    AND (l_a.lon BETWEEN {LON_1} AND {LON_2})
+                    AND (l_a.lat BETWEEN {LAT_1} AND {LAT_2})
+                    AND (l_b.lon BETWEEN {LON_1} AND {LON_2})
+                    AND (l_b.lat BETWEEN {LAT_1} AND {LAT_2})
 
-                    AND d.walking_distance < 1
+                    AND d.walking_distance is null
                     ORDER by d.distance
 
                     """)
+
         distances = cur.fetchall()
         et = time.time()
         print(f"got {len(distances)} distances in {int(et-st)} secs")
