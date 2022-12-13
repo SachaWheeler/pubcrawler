@@ -3,7 +3,7 @@ import networkx as nx
 from datetime import timedelta
 from os.path import exists
 import time
-from config import LON_1, LAT_1, LON_2, LAT_2, MAP_NAME
+from config import NORTH, SOUTH, EAST, WEST, MAP_NAME
 
 
 st = time.time()
@@ -27,7 +27,7 @@ print(f"Creating mapfile {graph_file}")
 # Create the graph of the area from OSM data.
 # It will download the data and create the graph
 
-G = ox.graph_from_bbox(LON_1, LAT_1, LON_2, LAT_2, network_type='walk')
+G = ox.graph_from_bbox(NORTH, SOUTH, EAST, WEST, network_type='walk')
 
 # G = ox.graph_from_place(graph_area, network_type='walk')
 
