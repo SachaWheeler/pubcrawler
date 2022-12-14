@@ -23,6 +23,9 @@ SPORTING_PAGE   = "51.4848277,-0.1830941"
 LIZZIE          = "51.5447774,-0.1184278"
 LOTTIE          = "51.5359589,-0.2059297"
 
+START = SACHA
+END = BROMPTON
+
 class Pub:
     def __init__(self, id=None, name=None, address=None,
                  lat=None, lon=None, walking_distance=None):
@@ -73,7 +76,7 @@ select * from (
     WHERE p.id = d.end_loc
     AND l.pub_id = d.end_loc
     AND d.start_loc = %s
-    AND d.walking_distance > 0
+    AND d.walking_distance > 100
 
     UNION ALL
 
@@ -82,7 +85,7 @@ select * from (
     WHERE p.id = d.start_loc
     AND l.pub_id = d.start_loc
     AND d.end_loc = %s
-    AND d.walking_distance > 0
+    AND d.walking_distance > 100
     ) t order by 6
 
     """
@@ -167,9 +170,10 @@ if __name__ == '__main__':
     t1_start = process_time()
 
     # collect coordinates
-    start = ""  # input("starting coordinates (lat, long): ")
+    start = input("starting coordinates (lat, long): ")
     if "," not in start:
-        start = SACHA
+        start = START
+        print(f"start: {START}")
     start_lat, start_lon = start.split(',')
     try:
         start_lat = float(start_lat)
@@ -177,9 +181,10 @@ if __name__ == '__main__':
     except Exception as e:
         print(e)
         exit()
-    end = ""  # input("ending coordinates (lat, long): ")
+    end = input("ending coordinates (lat, long): ")
     if "," not in end:
-        end = LIZZIE
+        end = END
+        print(f"end: {END}")
     end_lat, end_lon = end.split(',')
     try:
         end_lat = float(end_lat)
@@ -190,8 +195,8 @@ if __name__ == '__main__':
 
     # find distance between start and end
     total_dist = int(get_distance(start_lat, start_lon, end_lat, end_lon))
-    print(start_lat, start_lon, end_lat, end_lon)
-    print(f" total distance: {total_dist}")
+    print(f"({start_lat}, {start_lon}), ({end_lat}, {end_lon})")
+    print(f" total distance: {total_dist:,}m")
 
     conn = None
     try:
