@@ -56,7 +56,7 @@ def tuple_to_pub(pub_tuple=None):
         walking_distance = walking_distance
     )
 
-KM_TO_DEGREES = 0.00904
+KM_TO_DEGREES = 0.00904 / 2
 initial_pubs_sql ="""
     SELECT p.name, p.id, p.address, l.lat, l.lon
     FROM pub p, location l
@@ -73,6 +73,7 @@ select * from (
     WHERE p.id = d.end_loc
     AND l.pub_id = d.end_loc
     AND d.start_loc = %s
+    AND d.walking_distance > 0
 
     UNION ALL
 
@@ -81,6 +82,7 @@ select * from (
     WHERE p.id = d.start_loc
     AND l.pub_id = d.start_loc
     AND d.end_loc = %s
+    AND d.walking_distance > 0
     ) t order by 6
 
     """
@@ -91,40 +93,42 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
     print("starting points:", start, end)
     if start[0] < end[0]:  # going north
         print("north")
-        south_bound = start[0]
+        south_bound = start[0] - KM_TO_DEGREES
         north_bound = start[0] + KM_TO_DEGREES
     else:  # going south
         print("south")
         south_bound = start[0] - KM_TO_DEGREES
-        north_bound = start[0]
+        north_bound = start[0] + KM_TO_DEGREES
 
     if start[1] < end[1]:  # going west
         print("west")
-        east_bound = start[1]
+        east_bound = start[1] + KM_TO_DEGREES
         west_bound = start[1] - KM_TO_DEGREES
     else:  # going east
         print("east")
         east_bound = start[1] + KM_TO_DEGREES
-        west_bound = start[1]
+        west_bound = start[1] - KM_TO_DEGREES
     # print(f"east bound: {east_bound}")
     # print(f"west bound: {west_bound}")
     # print(f"south bound: {south_bound}")
     # print(f"north bound: {north_bound}")
-    # print(f"north east: {north_bound}, {east_bound}")
-    # print(f"north west: {north_bound}, {west_bound}")
-    # print(f"south west: {south_bound}, {west_bound}")
-    # print(f"south east: {south_bound}, {east_bound}")
+    print(f"north east: {north_bound}, {east_bound}")
+    print(f"north west: {north_bound}, {west_bound}")
+    print(f"south west: {south_bound}, {west_bound}")
+    print(f"south east: {south_bound}, {east_bound}")
     # exit(0)
 
     # find closest 5 pubs to start point in the right direction
-    print(initial_pubs_sql % (
-        "{:.5f}".format(south_bound),
-        "{:.5f}".format(north_bound),
-        "{:.5f}".format(east_bound),
-        "{:.5f}".format(west_bound)))
+    """
+    cur.execute(initial_pubs_sql % (
+        "{:.6f}".format(south_bound),
+        "{:.6f}".format(north_bound),
+        "{:.6f}".format(east_bound),
+        "{:.6f}".format(west_bound)))
+    """
     cur.execute(initial_pubs_sql,
                 (south_bound, north_bound,
-                 east_bound, west_bound))
+                 west_bound, east_bound))
 
     start_pubs = cur.fetchall()
     pprint.pprint(start_pubs)
@@ -165,7 +169,7 @@ if __name__ == '__main__':
     # collect coordinates
     start = ""  # input("starting coordinates (lat, long): ")
     if "," not in start:
-        start = LIZZIE
+        start = SACHA
     start_lat, start_lon = start.split(',')
     try:
         start_lat = float(start_lat)
@@ -175,7 +179,7 @@ if __name__ == '__main__':
         exit()
     end = ""  # input("ending coordinates (lat, long): ")
     if "," not in end:
-        end = LOTTIE
+        end = SPORTING_PAGE
     end_lat, end_lon = end.split(',')
     try:
         end_lat = float(end_lat)
