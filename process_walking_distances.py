@@ -12,8 +12,8 @@ import networkx as nx
 from os.path import exists
 
 
-def output(count, added, skipped):
-    print(f"{count} scanned, {skipped} skipped, {added} added.")
+def output(count, added, skipped, time_taken):
+    print(f"{count} scanned, {skipped} skipped, {added} added in {time_taken}.")
 
 def load_map():
     graph_file = f"maps/{MAP_NAME}.graphml"
@@ -68,11 +68,14 @@ def process_walking():
         distance_sql = """UPDATE distance SET walking_distance = %s WHERE id = %s"""
 
         # dist_iter = iter(distances)
+        prev_output_time = time.time()
         for dist in distances:
             if count ==0:
                 print("started the loop")
             elif count%100==0:
-                output(count, added, skipped)
+                time_now = time.time()
+                output(count, added, skipped, int(time_now - prev_output_time))
+                prev_output_time = time_now
             count += 1
             # (1, 51.958698, 1.057832, 51.975311, 1.05611)
             dist_id = dist[0]
@@ -95,13 +98,14 @@ def process_walking():
 
             if orig_node == dest_node:
                 skipped += 1
+                cur.execute(distance_sql, (0, dist_id))
             else:
                 added += 1
                 distance_in_meters = nx.shortest_path_length(
                     G, orig_node, dest_node, weight='length')
                 cur.execute(distance_sql, (int(distance_in_meters), dist_id))
 
-        output(count, added, skipped)
+        output(count, added, skipped, )
         conn.commit()
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
@@ -110,7 +114,7 @@ def process_walking():
         if conn is not None:
             conn.commit()
             conn.close()
-        output(count, added, skipped)
+        output(count, added, skipped, time.process_time())
 
 if __name__ == '__main__':
     t1_start = time.process_time()
