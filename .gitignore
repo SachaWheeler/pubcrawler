@@ -4,4 +4,4 @@ databases
 cache/
 maps/
 .DS_Store
-osm_files
+maps.zip
