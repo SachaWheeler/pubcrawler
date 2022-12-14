@@ -90,32 +90,32 @@ select * from (
 def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
     paths = []
     # find bounding box for first pub - 1000m
-    print("starting points:", start, end)
+    # print("starting points:", start, end)
     if start[0] < end[0]:  # going north
-        print("north")
+        # print("north")
         south_bound = start[0] - KM_TO_DEGREES
         north_bound = start[0] + KM_TO_DEGREES
     else:  # going south
-        print("south")
+        # print("south")
         south_bound = start[0] - KM_TO_DEGREES
         north_bound = start[0] + KM_TO_DEGREES
 
     if start[1] < end[1]:  # going west
-        print("west")
+        # print("west")
         east_bound = start[1] + KM_TO_DEGREES
         west_bound = start[1] - KM_TO_DEGREES
     else:  # going east
-        print("east")
+        # print("east")
         east_bound = start[1] + KM_TO_DEGREES
         west_bound = start[1] - KM_TO_DEGREES
     # print(f"east bound: {east_bound}")
     # print(f"west bound: {west_bound}")
     # print(f"south bound: {south_bound}")
     # print(f"north bound: {north_bound}")
-    print(f"north east: {north_bound}, {east_bound}")
-    print(f"north west: {north_bound}, {west_bound}")
-    print(f"south west: {south_bound}, {west_bound}")
-    print(f"south east: {south_bound}, {east_bound}")
+    # print(f"north east: {north_bound}, {east_bound}")
+    # print(f"north west: {north_bound}, {west_bound}")
+    # print(f"south west: {south_bound}, {west_bound}")
+    # print(f"south east: {south_bound}, {east_bound}")
     # exit(0)
 
     # find closest 5 pubs to start point in the right direction
@@ -131,7 +131,7 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
                  west_bound, east_bound))
 
     start_pubs = cur.fetchall()
-    pprint.pprint(start_pubs)
+    # pprint.pprint(start_pubs)
     for pub in start_pubs:
         distance = int(get_distance(start[0], start[1], pub[3], pub[4]))
         paths.append(pub + (distance,))
@@ -179,7 +179,7 @@ if __name__ == '__main__':
         exit()
     end = ""  # input("ending coordinates (lat, long): ")
     if "," not in end:
-        end = SPORTING_PAGE
+        end = LIZZIE
     end_lat, end_lon = end.split(',')
     try:
         end_lat = float(end_lat)
