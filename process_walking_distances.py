@@ -98,14 +98,14 @@ def process_walking():
 
             if orig_node == dest_node:
                 skipped += 1
-                cur.execute(distance_sql, (0, dist_id))
+                distance_in_meters = 0
             else:
                 added += 1
                 distance_in_meters = nx.shortest_path_length(
                     G, orig_node, dest_node, weight='length')
-                cur.execute(distance_sql, (int(distance_in_meters), dist_id))
+            cur.execute(distance_sql, (int(distance_in_meters), dist_id))
 
-        output(count, added, skipped, )
+        output(count, added, skipped, time.time())
         conn.commit()
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
