@@ -2,6 +2,9 @@
 from configparser import ConfigParser
 
 
+# https://tripadvisor-content-api.readme.io/reference/overview
+TRIPADVISOR_API_KEY = "CA5AE29CCF0240FBAC51AA592C55EFEE"
+
 # http://bboxfinder.com/#51.418892,-0.248256,51.570653,-0.040889
 # LON_1, LAT_1, LON_2, LAT_2 = -0.230977,51.487018,-0.092103,51.551963
 LON_1, LAT_1, LON_2, LAT_2 = -0.248256,51.418892,-0.040889,51.570653  # larger

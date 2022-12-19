@@ -45,17 +45,18 @@ def process_walking():
                     SELECT d.id,
                         l_a.lat as start_lat, l_a.lon as start_lon,
                         l_b.lat as end_lat,   l_b.lon as end_lon,
-                        d.distance
+                        d.distance, d.walking_distance
                     FROM location l_a, location l_b, distance d
                     WHERE l_a.pub_id = d.start_loc
                     AND l_b.pub_id = d.end_loc
+                    AND l_a.pub_id != l_b.pub_id
 
                     AND (l_a.lon BETWEEN {LON_1} AND {LON_2})
                     AND (l_a.lat BETWEEN {LAT_1} AND {LAT_2})
                     AND (l_b.lon BETWEEN {LON_1} AND {LON_2})
                     AND (l_b.lat BETWEEN {LAT_1} AND {LAT_2})
 
-                    AND d.walking_distance is null
+                    AND d.walking_distance = 0
                     ORDER by d.distance
 
                     """)
@@ -83,6 +84,9 @@ def process_walking():
             dest_coords = (dist[3], dist[4])
 
             # find the nearest node to the start location. LON, LAT (X, Y), not LAT, LON
+            orig_node = ox.nearest_nodes(G, orig_coords[1], orig_coords[0])# find the nearest node to the end location
+            dest_node = ox.nearest_nodes(G, dest_coords[1], dest_coords[0])#  find the shortest path
+            """
             if orig_coords in closest_node:
                 orig_node = closest_node[orig_coords]
             else:
@@ -93,6 +97,7 @@ def process_walking():
             else:
                 dest_node = ox.nearest_nodes(G, dest_coords[1], dest_coords[0])#  find the shortest path
                 closest_node[dest_coords] = dest_node
+            """
 
             # shortest_route = nx.shortest_path(G, orig_node, dest_node, method='bellman-ford')
 
@@ -103,6 +108,9 @@ def process_walking():
                 added += 1
                 distance_in_meters = nx.shortest_path_length(
                     G, orig_node, dest_node, weight='length')
+                # print(dist[5], distance_in_meters, dist[6])
+                # print(distance_in_meters, " - ", dist[6])
+                # if count >= 5: break
             cur.execute(distance_sql, (int(distance_in_meters), dist_id))
 
         output(count, added, skipped, time.time())

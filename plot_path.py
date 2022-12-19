@@ -14,8 +14,8 @@ from process_walking_distances import load_map
 from anytree import Node, RenderTree, PreOrderIter
 
 
-MAX_RECURSION_LEVEL = 10
-MAX_CHILD_COUNT = 2
+MAX_RECURSION_LEVEL = 15
+MAX_CHILD_COUNT = 1
 
 SACHA           = "51.5007169,-0.1847102"
 BROMPTON        = "51.4840451,-0.1919901"
@@ -69,24 +69,28 @@ initial_pubs_sql ="""
     LIMIT 8
     """
 
-next_pubs_sql ="""
+MIN_DIST = 10
+MAX_DIST = 2000
+ORDER = ""  # "DESC"
+next_pubs_sql =f"""
 select * from (
     SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance
     FROM pub p, location l, distance d
+
     WHERE p.id = d.end_loc
-    AND l.pub_id = d.end_loc
-    AND d.start_loc = %s
-    AND d.walking_distance > 100
+        AND l.pub_id = d.end_loc
+        AND d.start_loc = %s
+        AND d.walking_distance BETWEEN {MIN_DIST} AND {MAX_DIST}
 
     UNION ALL
 
     SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance
     FROM pub p, location l, distance d
     WHERE p.id = d.start_loc
-    AND l.pub_id = d.start_loc
-    AND d.end_loc = %s
-    AND d.walking_distance > 100
-    ) t order by 6
+        AND l.pub_id = d.start_loc
+        AND d.end_loc = %s
+        AND d.walking_distance BETWEEN {MIN_DIST} AND {MAX_DIST}
+) t order by 6 {ORDER}
 
     """
 
