@@ -1,6 +1,7 @@
 __pycache__
-databases
+databases/
 cache/
 maps/
+database.ini
 .DS_Store
 maps.zip

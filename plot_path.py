@@ -6,6 +6,7 @@ from config import config
 from time import process_time
 from math import sin, cos, sqrt, atan2, radians
 import itertools
+import difflib
 import re
 
 from process_distances import get_distance
@@ -14,7 +15,7 @@ from process_walking_distances import load_map
 from anytree import Node, RenderTree, PreOrderIter
 
 
-MAX_RECURSION_LEVEL = 15
+MAX_RECURSION_LEVEL =30
 MAX_CHILD_COUNT = 1
 
 SACHA           = "51.5007169,-0.1847102"
@@ -69,7 +70,7 @@ initial_pubs_sql ="""
     LIMIT 8
     """
 
-MIN_DIST = 10
+MIN_DIST = 100
 MAX_DIST = 2000
 ORDER = ""  # "DESC"
 next_pubs_sql =f"""
@@ -219,8 +220,44 @@ if __name__ == '__main__':
             for next_pub in plot_next_steps( pub_node.name, (end_lat, end_lon)):
                 Node(next_pub, parent=pub_node)
 
+        # render to screen
         for pre, fill, node in RenderTree(pubcrawl):
             print("%s%s" % (pre, node.name))
+
+        # find all paths from leaf nodes to root
+        leaves = list(PreOrderIter(pubcrawl, filter_=lambda node: node.is_leaf))
+
+        paths = []
+        for leaf in leaves:
+            path = str(leaf)[7:-2].split("/")
+
+            cleaned = []
+            for pub in path[1:]:
+                pprint.pprint(pub)
+                cleaned.append(",".join(pub.split(",")[:-2]))
+            paths.append(cleaned)
+        pprint.pprint(paths)
+        print("\n")
+
+        score_similar = 0
+        score_different = 100
+        similar = None
+        different = None
+        for a, b in itertools.combinations(paths, 2):
+            seq = difflib.SequenceMatcher(None, a, b)
+            ratio = seq.ratio()
+            print(ratio)
+            if ratio > score_similar:
+                score_similar = ratio
+                similar = (a, b)
+            if ratio < score_different:
+                score_different = ratio
+                different = (a, b)
+        print(f"similar {score_similar} ")
+        pprint.pprint(similar)
+        print("\n")
+        print(f"different {score_different}")
+        pprint.pprint(different)
 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
