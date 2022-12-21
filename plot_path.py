@@ -57,10 +57,10 @@ class Pub:
         return f"{self.name}, {self.address}"
 
     def __hash__(self):
-        return hash((self.name, self.id))
+        return hash(self.id)
 
     def __eq__(self, other):
-        return (self.name, self.id) == (other.name, other.id)
+        return self.id == other.id
 
 
 def tuple_to_pub(pub_tuple=None):
@@ -153,7 +153,7 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
                  west_bound, east_bound))
 
     start_pubs = cur.fetchall()
-    pprint.pprint(start_pubs)
+    # pprint.pprint(start_pubs)
     """
     ('Doyles Tavern',
     11038,
@@ -240,11 +240,11 @@ if __name__ == '__main__':
         for pub in starting_points((start_lat, start_lon), (end_lat, end_lon)):
             # calculate distance
             dist = get_distance(start_lat, start_lon, pub.lat, pub.lon)
-            node = WNode(pub, parent=pubcrawl, weight=dist)
+            node = WNode(pub, parent=pubcrawl, weight=int(dist))
 
         for pub_node in PreOrderIter(pubcrawl, maxlevel=MAX_RECURSION_LEVEL):
             if isinstance(pub_node, Node):
-                print(f"skipping {pub_node}")
+                # print(f"skipping {pub_node}")
                 continue
 
             for next_pub in plot_next_steps( pub_node, (end_lat, end_lon)):
@@ -263,18 +263,18 @@ if __name__ == '__main__':
         # find all paths from leaf nodes to root
         leaves = list(PreOrderIter(pubcrawl, filter_=lambda node: node.is_leaf))
         print("leaves done")
-        pprint.pprint(leaves)
-
         paths = []
         for leaf in leaves:
-            path = str(leaf)[7:-2].split("/")  # strip out "Node('" from beginning and "')" from end
-            cleaned = []
-            for pub in path[1:]:
-                # pprint.pprint(pub)
-                cleaned.append(",".join(pub.split(",")[:-2]))
-            paths.append(cleaned)
+            # print(leaf, leaf.pub.id)
+            steps = []
+            for p in leaf.path:
+                if isinstance(p, Node):
+                    # print(p)
+                    continue
+                else:
+                    steps.append(p.pub.id)
+            paths.append(steps)
         # pprint.pprint(paths)
-        # print("\n")
         print(f"{len(paths)} paths")
 
         score_similar = 0
