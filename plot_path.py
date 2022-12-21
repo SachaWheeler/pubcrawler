@@ -12,11 +12,13 @@ import re
 from process_distances import get_distance
 from process_walking_distances import load_map
 
-from anytree import Node, RenderTree, PreOrderIter
+from anytree import Node, RenderTree, PreOrderIter, NodeMixin
 
 
-MAX_RECURSION_LEVEL =30
+MAX_RECURSION_LEVEL = 30
 MAX_CHILD_COUNT = 1
+MIN_DIST = 500
+MAX_DIST = 2000
 
 SACHA           = "51.5007169,-0.1847102"
 BROMPTON        = "51.4840451,-0.1919901"
@@ -24,8 +26,22 @@ SPORTING_PAGE   = "51.4848277,-0.1830941"
 LIZZIE          = "51.5447774,-0.1184278"
 LOTTIE          = "51.5359589,-0.2059297"
 
-START = SACHA
-END = BROMPTON
+START = LIZZIE
+END = LOTTIE
+
+class WNode(NodeMixin):
+    def __init__(self, pub, parent=None, weight=None):
+        super(WNode, self).__init__()
+        self.pub = pub
+        self.parent = parent
+        self.weight = weight if parent is not None else None
+
+    def _post_detach(self, parent):
+        self.weight = None
+
+    def __str__(self):
+        return str(self.pub)
+
 
 class Pub:
     def __init__(self, id=None, name=None, address=None,
@@ -38,7 +54,7 @@ class Pub:
         self.walking_distance = walking_distance
 
     def __str__(self):
-        return f"{self.name}, {self.address}, {self.walking_distance}m"
+        return f"{self.name}, {self.address}"
 
     def __hash__(self):
         return hash((self.name, self.id))
@@ -67,11 +83,9 @@ initial_pubs_sql ="""
     WHERE p.id = l.pub_id
     AND (l.lat BETWEEN %s AND %s)
     AND (l.lon BETWEEN %s AND %s)
-    LIMIT 8
+    LIMIT 6
     """
 
-MIN_DIST = 100
-MAX_DIST = 2000
 ORDER = ""  # "DESC"
 next_pubs_sql =f"""
 select * from (
@@ -139,7 +153,15 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
                  west_bound, east_bound))
 
     start_pubs = cur.fetchall()
-    # pprint.pprint(start_pubs)
+    pprint.pprint(start_pubs)
+    """
+    ('Doyles Tavern',
+    11038,
+    'Doyles Tavern, 379 Caledonian Road, Islington, London',
+    51.543425, -0.11775),
+
+    """
+
     for pub in start_pubs:
         distance = int(get_distance(start[0], start[1], pub[3], pub[4]))
         paths.append(pub + (distance,))
@@ -149,10 +171,12 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
 
 def plot_next_steps(this, end):  # ((pub object), (end_lat, end_lon))
     # find closest pubs
-    cur.execute(next_pubs_sql % (this.id, this.id))
+    # pprint.pprint(f"tyhis {this} {this.pub}")
+    pub = this.pub
+    cur.execute(next_pubs_sql % (pub.id, pub.id))
     next_pubs = cur.fetchall()
 
-    current_distance = get_distance(this.lat, this.lon, end[0], end[1])
+    current_distance = get_distance(pub.lat, pub.lon, end[0], end[1])
     next_count = 0
     next_steps = []
     for sub_idx, next_pub in enumerate(next_pubs):
@@ -201,7 +225,7 @@ if __name__ == '__main__':
     # find distance between start and end
     total_dist = int(get_distance(start_lat, start_lon, end_lat, end_lon))
     print(f"({start_lat}, {start_lon}), ({end_lat}, {end_lon})")
-    print(f" total distance: {total_dist:,}m")
+    print(f"total distance: {total_dist:,}m")
 
     conn = None
     try:
@@ -211,33 +235,47 @@ if __name__ == '__main__':
 
         pubcrawl = Node(f"({start_lat}, {start_lon}), ({end_lat}, {end_lon})")
 
+        print("started")
+        #  WNode(pub, parent=a, weight=2)
         for pub in starting_points((start_lat, start_lon), (end_lat, end_lon)):
-            node = Node(pub, parent=pubcrawl)
+            # calculate distance
+            dist = get_distance(start_lat, start_lon, pub.lat, pub.lon)
+            node = WNode(pub, parent=pubcrawl, weight=dist)
 
         for pub_node in PreOrderIter(pubcrawl, maxlevel=MAX_RECURSION_LEVEL):
-            if isinstance(pub_node.name, str):
+            if isinstance(pub_node, Node):
+                print(f"skipping {pub_node}")
                 continue
-            for next_pub in plot_next_steps( pub_node.name, (end_lat, end_lon)):
-                Node(next_pub, parent=pub_node)
 
+            for next_pub in plot_next_steps( pub_node, (end_lat, end_lon)):
+                WNode(next_pub, parent=pub_node, weight=next_pub.walking_distance)
+        print("routes done")
+
+        """ """
         # render to screen
         for pre, fill, node in RenderTree(pubcrawl):
-            print("%s%s" % (pre, node.name))
+            if isinstance(node, Node):
+                print("%s%s" % (pre, node))
+            else:
+                print("%s%s (%sm)" % (pre, node, node.weight))
+        """ """
 
         # find all paths from leaf nodes to root
         leaves = list(PreOrderIter(pubcrawl, filter_=lambda node: node.is_leaf))
+        print("leaves done")
+        pprint.pprint(leaves)
 
         paths = []
         for leaf in leaves:
-            path = str(leaf)[7:-2].split("/")
-
+            path = str(leaf)[7:-2].split("/")  # strip out "Node('" from beginning and "')" from end
             cleaned = []
             for pub in path[1:]:
-                pprint.pprint(pub)
+                # pprint.pprint(pub)
                 cleaned.append(",".join(pub.split(",")[:-2]))
             paths.append(cleaned)
-        pprint.pprint(paths)
-        print("\n")
+        # pprint.pprint(paths)
+        # print("\n")
+        print(f"{len(paths)} paths")
 
         score_similar = 0
         score_different = 100
@@ -246,16 +284,16 @@ if __name__ == '__main__':
         for a, b in itertools.combinations(paths, 2):
             seq = difflib.SequenceMatcher(None, a, b)
             ratio = seq.ratio()
-            print(ratio)
+            # print(ratio)
             if ratio > score_similar:
                 score_similar = ratio
                 similar = (a, b)
             if ratio < score_different:
                 score_different = ratio
                 different = (a, b)
-        print(f"similar {score_similar} ")
-        pprint.pprint(similar)
-        print("\n")
+        # print(f"similar {score_similar} ")
+        # pprint.pprint(similar)
+        # print("\n")
         print(f"different {score_different}")
         pprint.pprint(different)
 
