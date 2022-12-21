@@ -26,8 +26,8 @@ SPORTING_PAGE   = "51.4848277,-0.1830941"
 LIZZIE          = "51.5447774,-0.1184278"
 LOTTIE          = "51.5359589,-0.2059297"
 
-START = SACHA
-END = LIZZIE
+START = LIZZIE
+END = LOTTIE
 
 class WNode(NodeMixin):
     def __init__(self, pub, parent=None, weight=None):
