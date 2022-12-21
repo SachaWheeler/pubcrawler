@@ -76,6 +76,17 @@ def tuple_to_pub(pub_tuple=None):
         walking_distance = walking_distance
     )
 
+def get_pub(pub_id):
+
+    get_pub_sql =f"""
+    SELECT p.name, p.id, p.address
+    FROM pub p
+    WHERE p.id = %s
+    """
+    cur.execute(get_pub_sql, (pub_id,))
+    pub = cur.fetchone()
+    return pub
+
 KM_TO_DEGREES = 0.00904 / 2
 initial_pubs_sql ="""
     SELECT p.name, p.id, p.address, l.lat, l.lon
@@ -296,6 +307,11 @@ if __name__ == '__main__':
         # print("\n")
         print(f"different {score_different}")
         pprint.pprint(different)
+        for route in different:
+            for pub_id in route:
+                pub = get_pub(pub_id)
+                print(pub)
+            print("\n")
 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
