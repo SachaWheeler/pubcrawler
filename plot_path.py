@@ -16,7 +16,7 @@ from anytree import Node, RenderTree, PreOrderIter, NodeMixin
 
 
 MAX_RECURSION_LEVEL = 30
-MAX_CHILD_COUNT = 1
+MAX_CHILD_COUNT = 4
 MIN_DIST = 500
 MAX_DIST = 2000
 
@@ -177,12 +177,16 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
         distance = int(get_distance(start[0], start[1], pub[3], pub[4]))
         paths.append(pub + (distance,))
     paths.sort(key=lambda array_tup: array_tup[0][5])  # sorts in place
-    # print([tuple_to_pub(pub) for pub in paths])
+
     return [tuple_to_pub(pub) for pub in paths]
 
-def plot_next_steps(this, end):  # ((pub object), (end_lat, end_lon))
+def plot_next_steps(this, end):  # ((Node object), (end_lat, end_lon))
     # find closest pubs
-    # pprint.pprint(f"tyhis {this} {this.pub}")
+    # print(this.pub, this.depth)
+    if MAX_CHILD_COUNT - this.depth > 0:
+        max_children = MAX_CHILD_COUNT - this.depth
+    else:
+        max_children = 1
     pub = this.pub
     cur.execute(next_pubs_sql % (pub.id, pub.id))
     next_pubs = cur.fetchall()
@@ -200,7 +204,7 @@ def plot_next_steps(this, end):  # ((pub object), (end_lat, end_lon))
             continue
         next_count += 1
         next_steps.append(pub_obj)
-        if next_count == MAX_CHILD_COUNT:
+        if next_count ==  max_children:
             break
 
     return next_steps
@@ -262,14 +266,14 @@ if __name__ == '__main__':
                 WNode(next_pub, parent=pub_node, weight=next_pub.walking_distance)
         print("routes done")
 
-        """ """
+        """
         # render to screen
         for pre, fill, node in RenderTree(pubcrawl):
             if isinstance(node, Node):
                 print("%s%s" % (pre, node))
             else:
                 print("%s%s (%sm)" % (pre, node, node.weight))
-        """ """
+        """
 
         # find all paths from leaf nodes to root
         leaves = list(PreOrderIter(pubcrawl, filter_=lambda node: node.is_leaf))
@@ -306,7 +310,7 @@ if __name__ == '__main__':
         # pprint.pprint(similar)
         # print("\n")
         print(f"different {score_different}")
-        pprint.pprint(different)
+        # pprint.pprint(different)
         for route in different:
             for pub_id in route:
                 pub = get_pub(pub_id)
