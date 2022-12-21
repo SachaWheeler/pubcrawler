@@ -15,9 +15,9 @@ from process_walking_distances import load_map
 from anytree import Node, RenderTree, PreOrderIter, NodeMixin
 
 
-MAX_RECURSION_LEVEL = 30
+MAX_RECURSION_LEVEL = 40
 MAX_CHILD_COUNT = 4
-MIN_DIST = 500
+MIN_DIST = 400
 MAX_DIST = 2000
 
 SACHA           = "51.5007169,-0.1847102"
@@ -26,8 +26,8 @@ SPORTING_PAGE   = "51.4848277,-0.1830941"
 LIZZIE          = "51.5447774,-0.1184278"
 LOTTIE          = "51.5359589,-0.2059297"
 
-START = LIZZIE
-END = LOTTIE
+START = SACHA
+END = LIZZIE
 
 class WNode(NodeMixin):
     def __init__(self, pub, parent=None, weight=None):
@@ -151,27 +151,12 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
     # print(f"south east: {south_bound}, {east_bound}")
     # exit(0)
 
-    # find closest 5 pubs to start point in the right direction
-    """
-    cur.execute(initial_pubs_sql % (
-        "{:.6f}".format(south_bound),
-        "{:.6f}".format(north_bound),
-        "{:.6f}".format(east_bound),
-        "{:.6f}".format(west_bound)))
-    """
+    # find closest x pubs to start point in the right direction
     cur.execute(initial_pubs_sql,
                 (south_bound, north_bound,
                  west_bound, east_bound))
 
     start_pubs = cur.fetchall()
-    # pprint.pprint(start_pubs)
-    """
-    ('Doyles Tavern',
-    11038,
-    'Doyles Tavern, 379 Caledonian Road, Islington, London',
-    51.543425, -0.11775),
-
-    """
 
     for pub in start_pubs:
         distance = int(get_distance(start[0], start[1], pub[3], pub[4]))
@@ -204,7 +189,7 @@ def plot_next_steps(this, end):  # ((Node object), (end_lat, end_lon))
             continue
         next_count += 1
         next_steps.append(pub_obj)
-        if next_count ==  max_children:
+        if next_count == max_children:
             break
 
     return next_steps
