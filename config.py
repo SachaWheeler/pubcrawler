@@ -85,7 +85,7 @@ class Pub:
 def tuple_to_pub(pub_tuple=None):
     if pub_tuple is None:
         return None
-    (name, id, address, lat, lon, walking_distance, rating, hygiene, confidence, structure) = pub_tuple
+    (name, id, address, lat, lon, walking_distance, rating, hygiene, confidence, structure, _) = pub_tuple
     return Pub(
         id = id,
         name = name,
@@ -114,7 +114,8 @@ def get_pub(cur, pub_id):
 
     get_pub_sql =f"""
     SELECT p.name, p.id, p.address, l.lat, l.lon,
-        p.rating, p.hygiene, p.confidence, p.structural
+        p.rating, p.hygiene, p.confidence, p.structural,
+        COALESCE(p.hygiene, 2) + COALESCE(p.confidence, 2) + COALESCE(p.structural, 0) as score
     FROM pub p, location l
     WHERE p.id = %s
     AND l.pub_id = p.id

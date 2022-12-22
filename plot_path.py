@@ -34,13 +34,14 @@ END = SPORTING_PAGE
 
 initial_pubs_sql ="""
     SELECT p.name, p.id, p.address, l.lat, l.lon,
-        p.rating, p.hygiene, p.confidence, p.structural
+        p.rating, p.hygiene, p.confidence, p.structural,
+        COALESCE(p.hygiene, 2) + COALESCE(p.confidence, 2) + COALESCE(p.structural, 0) as score
     FROM pub p, location l
     WHERE p.id = l.pub_id
     and p.rating is not null
     AND (l.lat BETWEEN %s AND %s)
     AND (l.lon BETWEEN %s AND %s)
-    ORDER by p.rating DESC
+    ORDER by p.rating DESC, score ASC
     LIMIT 6
     """
 
@@ -48,7 +49,8 @@ def get_next_pubs_sql():
     next_pubs_sql =f"""
     select * from (
         SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance,
-            p.rating, p.hygiene, p.confidence, p.structural
+            p.rating, p.hygiene, p.confidence, p.structural,
+            COALESCE(p.hygiene, 2) + COALESCE(p.confidence, 2) + COALESCE(p.structural, 0) as score
         FROM pub p, location l, distance d
 
         WHERE p.id = d.end_loc
@@ -60,7 +62,8 @@ def get_next_pubs_sql():
         UNION ALL
 
         SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance,
-            p.rating, p.hygiene, p.confidence, p.structural
+            p.rating, p.hygiene, p.confidence, p.structural,
+            COALESCE(p.hygiene, 2) + COALESCE(p.confidence, 2) + COALESCE(p.structural, 0) as score
         FROM pub p, location l, distance d
         WHERE p.id = d.start_loc
             AND p.rating is not null
