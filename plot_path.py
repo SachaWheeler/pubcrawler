@@ -143,7 +143,7 @@ def get_next_pubs_sql():
             AND l.pub_id = d.start_loc
             AND d.end_loc = %s
             AND d.walking_distance BETWEEN {minimum_distance} AND {MAX_DIST}
-    ) t order by 6 {ORDER}
+    ) t order by 0 {ORDER}
 
     """
     return next_pubs_sql
