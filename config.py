@@ -63,7 +63,8 @@ class Pub:
                  rating=None, hygiene=None, confidence=None, structure=None):
         self.id = id
         self.name = name
-        self.address = address.replace("LONDON", "").replace("PUBLIC HOUSE, ", "").replace("PUBLIC HOUSE", "").replace("Public House, ", "").replace("Public House", "").replace(" ,", "")
+        # self.address = address.replace("LONDON", "").replace("PUBLIC HOUSE, ", "").replace("PUBLIC HOUSE", "").replace("Public House, ", "").replace("Public House", "").replace(" ,", "")
+        self.address = address
         self.lat = lat
         self.lon = lon
         self.walking_distance = walking_distance
