@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from configparser import ConfigParser
+from anytree import NodeMixin
 
 
 # https://tripadvisor-content-api.readme.io/reference/overview
@@ -40,3 +41,86 @@ def config(filename='database.ini', section='postgresql'):
         raise Exception('Section {0} not found in the {1} file'.format(section, filename))
 
     return db
+
+
+class WNode(NodeMixin):
+    def __init__(self, pub, parent=None, weight=None):
+        super(WNode, self).__init__()
+        self.pub = pub
+        self.parent = parent
+        self.weight = weight if parent is not None else None
+
+    def _post_detach(self, parent):
+        self.weight = None
+
+    def __str__(self):
+        return str(self.pub)
+
+
+class Pub:
+    def __init__(self, id=None, name=None, address=None,
+                 lat=None, lon=None, walking_distance=None,
+                 rating=None, hygiene=None, confidence=None, structure=None):
+        self.id = id
+        self.name = name
+        self.address = address.replace("LONDON", "").replace("PUBLIC HOUSE, ", "").replace("PUBLIC HOUSE", "").replace("Public House, ", "").replace("Public House", "").replace(" ,", "")
+        self.lat = lat
+        self.lon = lon
+        self.walking_distance = walking_distance
+        self.rating = rating
+        self.hygiene = hygiene
+        self.confidence = confidence
+        self.structure = structure
+
+    def __str__(self):
+        return f"{self.name}, {self.address} ({self.rating}, {self.hygiene}, {self.confidence}, {self.structure})"
+
+    def __hash__(self):
+        return hash(self.id)
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+
+def tuple_to_pub(pub_tuple=None):
+    if pub_tuple is None:
+        return None
+    (name, id, address, lat, lon, walking_distance, rating, hygiene, confidence, structure) = pub_tuple
+    return Pub(
+        id = id,
+        name = name,
+        address = address,
+        lat = lat,
+        lon = lon,
+        walking_distance = walking_distance,
+        rating = rating,
+        hygiene = hygiene,
+        confidence = confidence,
+        structure = structure
+    )
+
+def get_walking_distance(cur, pub_a, pub_b):
+    get_walking_distance_sql = f"""
+    SELECT walking_distance
+    FROM distance d
+    WHERE (start_loc = {pub_a} AND end_loc = {pub_b})
+    OR (start_loc = {pub_b} AND end_loc = {pub_a})
+    """
+    cur.execute(get_walking_distance_sql)
+    walking_distance = cur.fetchone()
+    return walking_distance[0]
+
+def get_pub(cur, pub_id):
+
+    get_pub_sql =f"""
+    SELECT p.name, p.id, p.address, l.lat, l.lon,
+        p.rating, p.hygiene, p.confidence, p.structural
+    FROM pub p, location l
+    WHERE p.id = %s
+    AND l.pub_id = p.id
+    """
+    cur.execute(get_pub_sql, (pub_id,))
+    pub = cur.fetchone()
+    return pub
+
+KM_TO_DEGREES = 0.00904 / 2

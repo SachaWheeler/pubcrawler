@@ -2,7 +2,8 @@
 import csv
 import pprint
 import psycopg2
-from config import config
+from config import (config, WNode, Pub, tuple_to_pub,
+        get_walking_distance, get_pub, KM_TO_DEGREES)
 from time import process_time
 from math import sin, cos, sqrt, atan2, radians
 import itertools
@@ -12,11 +13,12 @@ import math
 from process_distances import get_distance
 from process_walking_distances import load_map
 
-from anytree import Node, RenderTree, PreOrderIter, NodeMixin
+from anytree import Node, RenderTree, PreOrderIter
 
 
 MAX_RECURSION_LEVEL = 40
 MAX_CHILD_COUNT = 5
+MIN_CHILD_COUNT = 2
 MIN_DIST = 100
 MAX_DIST = 2000
 
@@ -27,101 +29,21 @@ LIZZIE          = "51.5447774,-0.1184278"
 LOTTIE          = "51.5359589,-0.2059297"
 EXMOUTH         = "51.5258245,-0.111508"
 
-START = EXMOUTH
-END = LIZZIE
+START = SACHA
+END = SPORTING_PAGE
 
-class WNode(NodeMixin):
-    def __init__(self, pub, parent=None, weight=None):
-        super(WNode, self).__init__()
-        self.pub = pub
-        self.parent = parent
-        self.weight = weight if parent is not None else None
-
-    def _post_detach(self, parent):
-        self.weight = None
-
-    def __str__(self):
-        return str(self.pub)
-
-
-class Pub:
-    def __init__(self, id=None, name=None, address=None,
-                 lat=None, lon=None, walking_distance=None,
-                 rating=None, hygiene=None, confidence=None, structure=None):
-        self.id = id
-        self.name = name
-        self.address = address.replace("LONDON", "").replace("PUBLIC HOUSE, ", "").replace("PUBLIC HOUSE", "").replace("Public House, ", "").replace("Public House", "").replace(" ,", "")
-        self.lat = lat
-        self.lon = lon
-        self.walking_distance = walking_distance
-        self.rating = rating
-        self.hygiene = hygiene
-        self.confidence = confidence
-        self.structure = structure
-
-    def __str__(self):
-        return f"{self.name}, {self.address} ({self.rating}, {self.hygiene}, {self.confidence}, {self.structure})"
-
-    def __hash__(self):
-        return hash(self.id)
-
-    def __eq__(self, other):
-        return self.id == other.id
-
-
-def tuple_to_pub(pub_tuple=None):
-    if pub_tuple is None:
-        return None
-    (name, id, address, lat, lon, walking_distance, rating, hygiene, confidence, structure) = pub_tuple
-    return Pub(
-        id = id,
-        name = name,
-        address = address,
-        lat = lat,
-        lon = lon,
-        walking_distance = walking_distance,
-        rating = rating,
-        hygiene = hygiene,
-        confidence = hygiene,
-        structure = structure
-    )
-
-def get_walking_distance(pub_a, pub_b):
-    get_walking_distance_sql = f"""
-    SELECT walking_distance
-    FROM distance d
-    WHERE (start_loc = {pub_a} AND end_loc = {pub_b})
-    OR (start_loc = {pub_b} AND end_loc = {pub_a})
-    """
-    cur.execute(get_walking_distance_sql)
-    walking_distance = cur.fetchone()
-    return walking_distance[0]
-
-def get_pub(pub_id):
-
-    get_pub_sql =f"""
-    SELECT p.name, p.id, p.address, l.lat, l.lon,
-        p.rating, p.hygiene, p.confidence, p.structural
-    FROM pub p, location l
-    WHERE p.id = %s
-    AND l.pub_id = p.id
-    """
-    cur.execute(get_pub_sql, (pub_id,))
-    pub = cur.fetchone()
-    return pub
-
-KM_TO_DEGREES = 0.00904 / 2
 initial_pubs_sql ="""
     SELECT p.name, p.id, p.address, l.lat, l.lon,
         p.rating, p.hygiene, p.confidence, p.structural
     FROM pub p, location l
     WHERE p.id = l.pub_id
+    and p.rating is not null
     AND (l.lat BETWEEN %s AND %s)
     AND (l.lon BETWEEN %s AND %s)
+    ORDER by p.rating DESC
     LIMIT 6
     """
 
-ORDER = ""  # "DESC"
 def get_next_pubs_sql():
     next_pubs_sql =f"""
     select * from (
@@ -130,6 +52,7 @@ def get_next_pubs_sql():
         FROM pub p, location l, distance d
 
         WHERE p.id = d.end_loc
+            AND p.rating is not null
             AND l.pub_id = d.end_loc
             AND d.start_loc = %s
             AND d.walking_distance BETWEEN {minimum_distance} AND {MAX_DIST}
@@ -140,10 +63,11 @@ def get_next_pubs_sql():
             p.rating, p.hygiene, p.confidence, p.structural
         FROM pub p, location l, distance d
         WHERE p.id = d.start_loc
+            AND p.rating is not null
             AND l.pub_id = d.start_loc
             AND d.end_loc = %s
             AND d.walking_distance BETWEEN {minimum_distance} AND {MAX_DIST}
-    ) t order by 0 {ORDER}
+    ) t order by 7 DESC, 6 ASC
 
     """
     return next_pubs_sql
@@ -188,7 +112,13 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
 
     for pub in start_pubs:
         distance = int(get_distance(start[0], start[1], pub[3], pub[4]))
-        paths.append(pub + (distance,))
+        # make into list
+        a = list(pub)
+        # insert value
+        a.insert(5, distance)
+        # make into tuple
+        a = tuple(a)
+        paths.append(a)
     paths.sort(key=lambda array_tup: array_tup[0][5])  # sorts in place
 
     return [tuple_to_pub(pub) for pub in paths]
@@ -196,13 +126,14 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
 def plot_next_steps(this, end):  # ((Node object), (end_lat, end_lon))
     # find closest pubs
     # print(this.pub, this.depth)
-    if MAX_CHILD_COUNT - this.depth > 0:
+    if MAX_CHILD_COUNT - this.depth > MIN_CHILD_COUNT:
         max_children = MAX_CHILD_COUNT - this.depth
     else:
-        max_children = 1
+        max_children = MIN_CHILD_COUNT
     pub = this.pub
     next_pubs_sql= get_next_pubs_sql()
     cur.execute(next_pubs_sql % (pub.id, pub.id))
+
     next_pubs = cur.fetchall()
 
     current_distance = get_distance(pub.lat, pub.lon, end[0], end[1])
@@ -228,7 +159,7 @@ if __name__ == '__main__':
     t1_start = process_time()
 
     # collect coordinates
-    start = input("starting coordinates (lat, long): ")
+    start = input("starting coordinates (lat, lon): ")
     if "," not in start:
         start = START
         # print(f"start: {START}")
@@ -239,7 +170,7 @@ if __name__ == '__main__':
     except Exception as e:
         print(e)
         exit()
-    end = input("ending coordinates (lat, long): ")
+    end = input("ending coordinates (lat, lon): ")
     if "," not in end:
         end = END
         # print(f"end: {END}")
@@ -286,7 +217,6 @@ if __name__ == '__main__':
         print("routes done")
 
         """
-        """
         # render to screen
         for pre, fill, node in RenderTree(pubcrawl):
             if isinstance(node, Node):
@@ -294,8 +224,6 @@ if __name__ == '__main__':
             else:
                 print("%s%s (%sm)" % (pre, node, node.weight))
         """
-        """
-        exit(0)
 
         # find all paths from leaf nodes to root
         leaves = list(PreOrderIter(pubcrawl, filter_=lambda node: node.is_leaf))
@@ -338,13 +266,16 @@ if __name__ == '__main__':
         for route in different:
             last_pub = None
             for pub_id in route:
-                pub_tuple = get_pub(pub_id)
+                pub_tuple = get_pub(cur, pub_id)
                 # pprint.pprint(pub_tuple)
                 if last_pub is None:
                     walking_distance = 0
                 else:
-                    walking_distance = get_walking_distance(pub_tuple[1], last_pub[1])
-                pub_tuple = pub_tuple + (walking_distance,)
+                    walking_distance = get_walking_distance(cur, pub_tuple[1], last_pub[1])
+                # insert walking_distance into tuple
+                a = list(pub_tuple)
+                a.insert(5, walking_distance)
+                pub_tuple = tuple(a)
                 last_pub = pub_tuple
                 pub = tuple_to_pub(pub_tuple)
                 print(pub)
