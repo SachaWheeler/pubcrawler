@@ -46,16 +46,21 @@ class WNode(NodeMixin):
 
 class Pub:
     def __init__(self, id=None, name=None, address=None,
-                 lat=None, lon=None, walking_distance=None):
+                 lat=None, lon=None, walking_distance=None,
+                 rating=None, hygiene=None, confidence=None, structure=None):
         self.id = id
         self.name = name
         self.address = address.replace("LONDON", "").replace("PUBLIC HOUSE, ", "").replace("PUBLIC HOUSE", "").replace("Public House, ", "").replace("Public House", "").replace(" ,", "")
         self.lat = lat
         self.lon = lon
         self.walking_distance = walking_distance
+        self.rating = rating
+        self.hygiene = hygiene
+        self.confidence = confidence
+        self.structure = structure
 
     def __str__(self):
-        return f"{self.name}, {self.address}"
+        return f"{self.name}, {self.address} ({self.rating}, {self.hygiene}, {self.confidence}, {self.structure})"
 
     def __hash__(self):
         return hash(self.id)
@@ -67,14 +72,18 @@ class Pub:
 def tuple_to_pub(pub_tuple=None):
     if pub_tuple is None:
         return None
-    (name, id, address, lat, lon, walking_distance) = pub_tuple
+    (name, id, address, lat, lon, walking_distance, rating, hygiene, confidence, structure) = pub_tuple
     return Pub(
         id = id,
         name = name,
         address = address,
         lat = lat,
         lon = lon,
-        walking_distance = walking_distance
+        walking_distance = walking_distance,
+        rating = rating,
+        hygiene = hygiene,
+        confidence = hygiene,
+        structure = structure
     )
 
 def get_walking_distance(pub_a, pub_b):
@@ -91,7 +100,8 @@ def get_walking_distance(pub_a, pub_b):
 def get_pub(pub_id):
 
     get_pub_sql =f"""
-    SELECT p.name, p.id, p.address, l.lat, l.lon
+    SELECT p.name, p.id, p.address, l.lat, l.lon,
+        p.rating, p.hygiene, p.confidence, p.structural
     FROM pub p, location l
     WHERE p.id = %s
     AND l.pub_id = p.id
@@ -102,7 +112,8 @@ def get_pub(pub_id):
 
 KM_TO_DEGREES = 0.00904 / 2
 initial_pubs_sql ="""
-    SELECT p.name, p.id, p.address, l.lat, l.lon
+    SELECT p.name, p.id, p.address, l.lat, l.lon,
+        p.rating, p.hygiene, p.confidence, p.structural
     FROM pub p, location l
     WHERE p.id = l.pub_id
     AND (l.lat BETWEEN %s AND %s)
@@ -114,7 +125,8 @@ ORDER = ""  # "DESC"
 def get_next_pubs_sql():
     next_pubs_sql =f"""
     select * from (
-        SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance
+        SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance,
+            p.rating, p.hygiene, p.confidence, p.structural
         FROM pub p, location l, distance d
 
         WHERE p.id = d.end_loc
@@ -124,7 +136,8 @@ def get_next_pubs_sql():
 
         UNION ALL
 
-        SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance
+        SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance,
+            p.rating, p.hygiene, p.confidence, p.structural
         FROM pub p, location l, distance d
         WHERE p.id = d.start_loc
             AND l.pub_id = d.start_loc
@@ -273,6 +286,7 @@ if __name__ == '__main__':
         print("routes done")
 
         """
+        """
         # render to screen
         for pre, fill, node in RenderTree(pubcrawl):
             if isinstance(node, Node):
@@ -280,6 +294,8 @@ if __name__ == '__main__':
             else:
                 print("%s%s (%sm)" % (pre, node, node.weight))
         """
+        """
+        exit(0)
 
         # find all paths from leaf nodes to root
         leaves = list(PreOrderIter(pubcrawl, filter_=lambda node: node.is_leaf))
