@@ -8,7 +8,7 @@ from math import sin, cos, sqrt, atan2, radians
 import itertools
 import difflib
 import re
-
+import math
 from process_distances import get_distance
 from process_walking_distances import load_map
 
@@ -16,8 +16,8 @@ from anytree import Node, RenderTree, PreOrderIter, NodeMixin
 
 
 MAX_RECURSION_LEVEL = 40
-MAX_CHILD_COUNT = 4
-MIN_DIST = 400
+MAX_CHILD_COUNT = 5
+MIN_DIST = 100
 MAX_DIST = 2000
 
 SACHA           = "51.5007169,-0.1847102"
@@ -25,9 +25,10 @@ BROMPTON        = "51.4840451,-0.1919901"
 SPORTING_PAGE   = "51.4848277,-0.1830941"
 LIZZIE          = "51.5447774,-0.1184278"
 LOTTIE          = "51.5359589,-0.2059297"
+EXMOUTH         = "51.5258245,-0.111508"
 
-START = LIZZIE
-END = LOTTIE
+START = EXMOUTH
+END = LIZZIE
 
 class WNode(NodeMixin):
     def __init__(self, pub, parent=None, weight=None):
@@ -76,12 +77,24 @@ def tuple_to_pub(pub_tuple=None):
         walking_distance = walking_distance
     )
 
+def get_walking_distance(pub_a, pub_b):
+    get_walking_distance_sql = f"""
+    SELECT walking_distance
+    FROM distance d
+    WHERE (start_loc = {pub_a} AND end_loc = {pub_b})
+    OR (start_loc = {pub_b} AND end_loc = {pub_a})
+    """
+    cur.execute(get_walking_distance_sql)
+    walking_distance = cur.fetchone()
+    return walking_distance[0]
+
 def get_pub(pub_id):
 
     get_pub_sql =f"""
-    SELECT p.name, p.id, p.address
-    FROM pub p
+    SELECT p.name, p.id, p.address, l.lat, l.lon
+    FROM pub p, location l
     WHERE p.id = %s
+    AND l.pub_id = p.id
     """
     cur.execute(get_pub_sql, (pub_id,))
     pub = cur.fetchone()
@@ -98,27 +111,29 @@ initial_pubs_sql ="""
     """
 
 ORDER = ""  # "DESC"
-next_pubs_sql =f"""
-select * from (
-    SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance
-    FROM pub p, location l, distance d
+def get_next_pubs_sql():
+    next_pubs_sql =f"""
+    select * from (
+        SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance
+        FROM pub p, location l, distance d
 
-    WHERE p.id = d.end_loc
-        AND l.pub_id = d.end_loc
-        AND d.start_loc = %s
-        AND d.walking_distance BETWEEN {MIN_DIST} AND {MAX_DIST}
+        WHERE p.id = d.end_loc
+            AND l.pub_id = d.end_loc
+            AND d.start_loc = %s
+            AND d.walking_distance BETWEEN {minimum_distance} AND {MAX_DIST}
 
-    UNION ALL
+        UNION ALL
 
-    SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance
-    FROM pub p, location l, distance d
-    WHERE p.id = d.start_loc
-        AND l.pub_id = d.start_loc
-        AND d.end_loc = %s
-        AND d.walking_distance BETWEEN {MIN_DIST} AND {MAX_DIST}
-) t order by 6 {ORDER}
+        SELECT p.name, p.id, p.address, l.lat, l.lon, d.walking_distance
+        FROM pub p, location l, distance d
+        WHERE p.id = d.start_loc
+            AND l.pub_id = d.start_loc
+            AND d.end_loc = %s
+            AND d.walking_distance BETWEEN {minimum_distance} AND {MAX_DIST}
+    ) t order by 6 {ORDER}
 
     """
+    return next_pubs_sql
 
 def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
     paths = []
@@ -173,6 +188,7 @@ def plot_next_steps(this, end):  # ((Node object), (end_lat, end_lon))
     else:
         max_children = 1
     pub = this.pub
+    next_pubs_sql= get_next_pubs_sql()
     cur.execute(next_pubs_sql % (pub.id, pub.id))
     next_pubs = cur.fetchall()
 
@@ -202,7 +218,7 @@ if __name__ == '__main__':
     start = input("starting coordinates (lat, long): ")
     if "," not in start:
         start = START
-        print(f"start: {START}")
+        # print(f"start: {START}")
     start_lat, start_lon = start.split(',')
     try:
         start_lat = float(start_lat)
@@ -213,7 +229,7 @@ if __name__ == '__main__':
     end = input("ending coordinates (lat, long): ")
     if "," not in end:
         end = END
-        print(f"end: {END}")
+        # print(f"end: {END}")
     end_lat, end_lon = end.split(',')
     try:
         end_lat = float(end_lat)
@@ -224,8 +240,13 @@ if __name__ == '__main__':
 
     # find distance between start and end
     total_dist = int(get_distance(start_lat, start_lon, end_lat, end_lon))
-    print(f"({start_lat}, {start_lon}), ({end_lat}, {end_lon})")
+    print(f"({start_lat}, {start_lon}) to ({end_lat}, {end_lon})")
     print(f"total distance: {total_dist:,}m")
+
+    # print(math.ceil(total_dist / 1000) * 100)
+    minimum_distance = math.ceil(total_dist / 1000) * 100
+    if minimum_distance < MIN_DIST:
+        minimum_distance = MIN_DIST
 
     conn = None
     try:
@@ -235,7 +256,7 @@ if __name__ == '__main__':
 
         pubcrawl = Node(f"({start_lat}, {start_lon}), ({end_lat}, {end_lon})")
 
-        print("started")
+        print("started\n")
         #  WNode(pub, parent=a, weight=2)
         for pub in starting_points((start_lat, start_lon), (end_lat, end_lon)):
             # calculate distance
@@ -262,7 +283,7 @@ if __name__ == '__main__':
 
         # find all paths from leaf nodes to root
         leaves = list(PreOrderIter(pubcrawl, filter_=lambda node: node.is_leaf))
-        print("leaves done")
+        # print("leaves done")
         paths = []
         for leaf in leaves:
             # print(leaf, leaf.pub.id)
@@ -277,28 +298,39 @@ if __name__ == '__main__':
         # pprint.pprint(paths)
         print(f"{len(paths)} paths")
 
-        score_similar = 0
+        # score_similar = 0
         score_different = 100
-        similar = None
+        # similar = None
         different = None
         for a, b in itertools.combinations(paths, 2):
             seq = difflib.SequenceMatcher(None, a, b)
             ratio = seq.ratio()
             # print(ratio)
+            """
             if ratio > score_similar:
                 score_similar = ratio
                 similar = (a, b)
+            """
             if ratio < score_different:
                 score_different = ratio
                 different = (a, b)
         # print(f"similar {score_similar} ")
         # pprint.pprint(similar)
         # print("\n")
-        print(f"different {score_different}")
+        # print(f"different {score_different}")
         # pprint.pprint(different)
         for route in different:
+            last_pub = None
             for pub_id in route:
-                pub = get_pub(pub_id)
+                pub_tuple = get_pub(pub_id)
+                # pprint.pprint(pub_tuple)
+                if last_pub is None:
+                    walking_distance = 0
+                else:
+                    walking_distance = get_walking_distance(pub_tuple[1], last_pub[1])
+                pub_tuple = pub_tuple + (walking_distance,)
+                last_pub = pub_tuple
+                pub = tuple_to_pub(pub_tuple)
                 print(pub)
             print("\n")
 
