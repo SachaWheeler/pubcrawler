@@ -18,9 +18,9 @@ from anytree import Node, RenderTree, PreOrderIter
 
 MAX_RECURSION_LEVEL = 40
 MAX_CHILD_COUNT = 5
-MIN_CHILD_COUNT = 2
+MIN_CHILD_COUNT = 1
 MIN_DIST = 100
-MAX_DIST = 2000
+MAX_DIST = 1500
 
 SACHA           = "51.5007169,-0.1847102"
 BROMPTON        = "51.4840451,-0.1919901"
@@ -29,8 +29,8 @@ LIZZIE          = "51.5447774,-0.1184278"
 LOTTIE          = "51.5359589,-0.2059297"
 EXMOUTH         = "51.5258245,-0.111508"
 
-START = SACHA
-END = SPORTING_PAGE
+START = LIZZIE
+END = LOTTIE
 
 initial_pubs_sql ="""
     SELECT p.name, p.id, p.address, l.lat, l.lon,
@@ -70,7 +70,7 @@ def get_next_pubs_sql():
             AND l.pub_id = d.start_loc
             AND d.end_loc = %s
             AND d.walking_distance BETWEEN {minimum_distance} AND {MAX_DIST}
-    ) t order by 7 DESC, 6 ASC
+    ) t order by 7 DESC, 11 ASC, 6 ASC
 
     """
     return next_pubs_sql
@@ -80,22 +80,20 @@ def starting_points(start, end):  # (start_lat, start_lon), (end_lat, end_lon))
     # find bounding box for first pub - 1000m
     # print("starting points:", start, end)
     if start[0] < end[0]:  # going north
-        # print("north")
-        south_bound = start[0] - KM_TO_DEGREES
+        south_bound = start[0]
         north_bound = start[0] + KM_TO_DEGREES
     else:  # going south
-        # print("south")
         south_bound = start[0] - KM_TO_DEGREES
-        north_bound = start[0] + KM_TO_DEGREES
+        north_bound = start[0]
 
     if start[1] < end[1]:  # going west
         # print("west")
-        east_bound = start[1] + KM_TO_DEGREES
+        east_bound = start[1]
         west_bound = start[1] - KM_TO_DEGREES
     else:  # going east
         # print("east")
         east_bound = start[1] + KM_TO_DEGREES
-        west_bound = start[1] - KM_TO_DEGREES
+        west_bound = start[1]
     # print(f"east bound: {east_bound}")
     # print(f"west bound: {west_bound}")
     # print(f"south bound: {south_bound}")
@@ -188,12 +186,12 @@ if __name__ == '__main__':
     # find distance between start and end
     total_dist = int(get_distance(start_lat, start_lon, end_lat, end_lon))
     print(f"({start_lat}, {start_lon}) to ({end_lat}, {end_lon})")
-    print(f"total distance: {total_dist:,}m")
 
     # print(math.ceil(total_dist / 1000) * 100)
     minimum_distance = math.ceil(total_dist / 1000) * 100
     if minimum_distance < MIN_DIST:
         minimum_distance = MIN_DIST
+    print(f"total distance: {total_dist:,}m in units of {minimum_distance}m")
 
     conn = None
     try:
@@ -217,7 +215,7 @@ if __name__ == '__main__':
 
             for next_pub in plot_next_steps( pub_node, (end_lat, end_lon)):
                 WNode(next_pub, parent=pub_node, weight=next_pub.walking_distance)
-        print("routes done")
+        # print("routes done")
 
         """
         # render to screen
