@@ -27,6 +27,11 @@ def create_tables():
             address VARCHAR(150) NOT NULL,
             postcode VARCHAR(10) NOT NULL,
             borough integer NOT NULL,
+            rating integer,
+            hygiene integer,
+            structural integer,
+            confidence integer,
+
             CONSTRAINT fk_borough_id
                 FOREIGN KEY(borough)
                 REFERENCES borough(id)
@@ -66,7 +71,14 @@ def create_tables():
         " CREATE INDEX idx_location_lat on location(lat) ",
         " CREATE INDEX idx_location_lon on location(lon) ",
 
-        " CREATE INDEX idx_pub_fsa_id on pub(fsa_id) "
+        " CREATE INDEX idx_pub_fsa_id on pub(fsa_id) ",
+
+        "create INDEX idx_rating ON pub(rating) ",
+        "create INDEX idx_hygiene ON pub(hygiene) ",
+        "create INDEX idx_confidence ON pub(confidence) ",
+        "create INDEX idx_structural ON pub(structural) ",
+
+
     )
     conn = None
     try:
