@@ -23,14 +23,15 @@ MIN_DIST = 100
 MAX_DIST = 1500
 
 SACHA           = "51.5007169,-0.1847102"
+MILO            = "51.5656213,0.0045044"
 BROMPTON        = "51.4840451,-0.1919901"
 SPORTING_PAGE   = "51.4848277,-0.1830941"
 LIZZIE          = "51.5447774,-0.1184278"
 LOTTIE          = "51.5359589,-0.2059297"
 EXMOUTH         = "51.5258245,-0.111508"
 
-START = LIZZIE
-END = LOTTIE
+START = MILO
+END = SACHA
 
 initial_pubs_sql ="""
     SELECT p.name, p.id, p.address, l.lat, l.lon,
