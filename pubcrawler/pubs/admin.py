@@ -5,8 +5,8 @@ from .models import Pub, Distance, LocalAuthority
 
 class PubAdmin(admin.ModelAdmin):
     list_display = ('name', 'address', 'postcode', 'latitude', 'longitude',
-            'local_authority', 'local_authority2')
-    search_fields = ('name', 'address', 'postcode', 'local_authority')
+            'local_authority')
+    search_fields = ('name', 'address', 'postcode', )
     list_filter = ('local_authority',)
     ordering = ('name',)
 
@@ -16,8 +16,11 @@ class DistanceAdmin(admin.ModelAdmin):
     list_filter = ('absolute_distance', 'walking_distance')
 
 class LocalAuthorityAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+    list_display = ('name', 'count')
     search_fields = ('name',)
+
+    def count(self, obj):
+        return obj.pubs.count()
 
 admin.site.register(Pub, PubAdmin)
 admin.site.register(Distance, DistanceAdmin)
