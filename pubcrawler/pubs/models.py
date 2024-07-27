@@ -1,16 +1,25 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 
+
+class LocalAuthority(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Pub(models.Model):
-    fas_id = models.CharField(max_length=50)
-    name = models.CharField(max_length=255)
+    fas_id = models.CharField(max_length=50, db_index=True)
+    name = models.CharField(max_length=255, db_index=True)
     address = models.CharField(max_length=255)
     postcode = models.CharField(max_length=20)
     easting = models.IntegerField()
     northing = models.IntegerField()
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    latitude = models.FloatField(db_index=True)
+    longitude = models.FloatField(db_index=True)
     local_authority = models.CharField(max_length=255)
+    local_authority2 = models.ForeignKey(LocalAuthority, on_delete=models.CASCADE, related_name='pubs', null=True)
 
     def __str__(self):
         return self.name
