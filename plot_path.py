@@ -30,8 +30,8 @@ LOTTIE          = "51.5359589,-0.2059297"
 EXMOUTH         = "51.5258245,-0.111508"
 SOHO            = "51.5111286,-0.139059"
 
-START = SOHO
-END = SACHA
+START = SACHA
+END = LIZZIE
 
 initial_pubs_sql ="""
     SELECT p.name, p.id, p.address, l.lat, l.lon,
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     print(f"({start_lat}, {start_lon}) to ({end_lat}, {end_lon})")
 
     # print(math.ceil(total_dist / 1000) * 100)
-    minimum_distance = math.ceil(total_dist / 1000) * 100
+    minimum_distance = 100  #math.ceil(total_dist / 1000) * 100
     if minimum_distance < MIN_DIST:
         minimum_distance = MIN_DIST
     print(f"total distance: {total_dist:,}m in units of {minimum_distance}m")
