@@ -16,7 +16,7 @@ admin.site.register(Pub, PubAdmin)
 class DistanceAdmin(admin.ModelAdmin):
     list_display = ('pub1', 'pub2', 'absolute_distance', 'walking_distance')
     search_fields = ('pub1__name', 'pub2__name')
-    list_filter = ('absolute_distance', 'walking_distance')
+    # list_filter = ('absolute_distance', 'walking_distance')
 
 admin.site.register(Distance, DistanceAdmin)
 

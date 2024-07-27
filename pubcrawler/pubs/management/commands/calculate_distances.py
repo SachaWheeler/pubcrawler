@@ -36,7 +36,10 @@ class Command(BaseCommand):
                 Distance.objects.update_or_create(
                     pub1=pub1,
                     pub2=pub2,
-                    defaults={'absolute_distance': absolute_distance, 'walking_distance': walking_distance}
+                    defaults={
+                        'absolute_distance': absolute_distance,
+                        'walking_distance': walking_distance
+                        }
                 )
 
         self.stdout.write(self.style.SUCCESS('Successfully calculated and stored distances'))
