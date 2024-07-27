@@ -18,7 +18,8 @@ class Pub(models.Model):
     northing = models.IntegerField()
     latitude = models.FloatField(db_index=True)
     longitude = models.FloatField(db_index=True)
-    local_authority = models.ForeignKey(LocalAuthority, on_delete=models.CASCADE, related_name='pubs', null=True)
+    local_authority = models.ForeignKey(LocalAuthority,
+            on_delete=models.CASCADE, related_name='pubs', null=True)
 
     def __str__(self):
         return self.name
