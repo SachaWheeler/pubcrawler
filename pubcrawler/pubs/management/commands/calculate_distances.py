@@ -22,8 +22,8 @@ class Command(BaseCommand):
                     if absolute_distance <= 1000:
                         # Calculate walking distance using osmnx
                         G = ox.graph_from_point(pub_location, dist=1000, network_type='walk')
-                        orig_node = ox.get_nearest_node(G, pub_location)
-                        dest_node = ox.get_nearest_node(G, other_location)
+                        orig_node = ox.nearest_nodes(G, pub.longitude, pub.latitude)
+                        dest_node = ox.nearest_nodes(G, other_pub.longitude, other_pub.latitude)
                         try:
                             walking_distance = nx.shortest_path_length(G, orig_node, dest_node, weight='length')
                         except nx.NetworkXNoPath:
