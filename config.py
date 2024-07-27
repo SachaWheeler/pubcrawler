@@ -8,9 +8,7 @@ TRIPADVISOR_API_KEY = "CA5AE29CCF0240FBAC51AA592C55EFEE"
 
 # http://bboxfinder.com/#51.418892,-0.248256,51.570653,-0.040889
 # LON_1, LAT_1, LON_2, LAT_2 = -0.230977,51.487018,-0.092103,51.551963
-# LON_1, LAT_1, LON_2, LAT_2 = -0.248256,51.418892,-0.040889,51.570653  # larger
-LON_1, LAT_1, LON_2, LAT_2 = -0.227623,51.458927,0.040512,51.580697  # include east london
-
+LON_1, LAT_1, LON_2, LAT_2 = -0.248256,51.418892,-0.040889,51.570653  # larger
 if LON_1 < LON_2:
     EAST = LON_1
     WEST = LON_2
@@ -25,7 +23,7 @@ else:
     SOUTH = LAT_2
 
 
-MAP_NAME = "London_central_and_east"
+MAP_NAME = "London_central"
 
 def config(filename='database.ini', section='postgresql'):
     # create a parser

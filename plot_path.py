@@ -19,20 +19,19 @@ from anytree import Node, RenderTree, PreOrderIter
 MAX_RECURSION_LEVEL = 40
 MAX_CHILD_COUNT = 5
 MIN_CHILD_COUNT = 1
-MIN_DIST = 500
+MIN_DIST = 100
 MAX_DIST = 1500
 
 SACHA           = "51.5007169,-0.1847102"
-MILO            = "51.5656213,0.0045044"
 BROMPTON        = "51.4840451,-0.1919901"
 SPORTING_PAGE   = "51.4848277,-0.1830941"
 LIZZIE          = "51.5447774,-0.1184278"
 LOTTIE          = "51.5359589,-0.2059297"
 EXMOUTH         = "51.5258245,-0.111508"
-TATTERSALS      = "51.5009575,-0.1669513"
+SOHO            = "51.5111286,-0.139059"
 
-START = SACHA
-END = TATTERSALS
+START = SOHO
+END = SACHA
 
 initial_pubs_sql ="""
     SELECT p.name, p.id, p.address, l.lat, l.lon,
@@ -193,7 +192,6 @@ if __name__ == '__main__':
     minimum_distance = math.ceil(total_dist / 1000) * 100
     if minimum_distance < MIN_DIST:
         minimum_distance = MIN_DIST
-    minimum_distance = MIN_DIST
     print(f"total distance: {total_dist:,}m in units of {minimum_distance}m")
 
     conn = None

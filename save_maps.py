@@ -8,18 +8,12 @@ from config import NORTH, SOUTH, EAST, WEST, MAP_NAME
 
 st = time.time()
 
-"""
 ox.config(use_cache=True,
           log_console=True,
           #overpass_endpoint="https://overpass.kumi.systems/api/",
           overpass_endpoint="http://overpass-api.de/api",
           # overpass_endpoint="https://z.overpass-api.de/api",
          )
-"""
-ox.settings.use_cache=True
-ox.settings.log_console=True,
-# ox.settings.overpass_endpoint="http://overpass-api.de/api",
-
 
 # The place where your 2 points are located. It will be used to create a graph from the OSM data
 # It could be a bounding box too, or an area around a point
