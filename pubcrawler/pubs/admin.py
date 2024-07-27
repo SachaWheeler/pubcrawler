@@ -10,10 +10,16 @@ class PubAdmin(admin.ModelAdmin):
     list_filter = ('local_authority',)
     ordering = ('name',)
 
+admin.site.register(Pub, PubAdmin)
+
+
 class DistanceAdmin(admin.ModelAdmin):
     list_display = ('pub1', 'pub2', 'absolute_distance', 'walking_distance')
     search_fields = ('pub1__name', 'pub2__name')
     list_filter = ('absolute_distance', 'walking_distance')
+
+admin.site.register(Distance, DistanceAdmin)
+
 
 class LocalAuthorityAdmin(admin.ModelAdmin):
     list_display = ('name', 'count')
@@ -22,7 +28,5 @@ class LocalAuthorityAdmin(admin.ModelAdmin):
     def count(self, obj):
         return obj.pubs.count()
 
-admin.site.register(Pub, PubAdmin)
-admin.site.register(Distance, DistanceAdmin)
 admin.site.register(LocalAuthority, LocalAuthorityAdmin)
 
