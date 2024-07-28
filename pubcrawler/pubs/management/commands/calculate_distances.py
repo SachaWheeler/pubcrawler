@@ -10,24 +10,44 @@ class Command(BaseCommand):
     help = 'Calculate distances between pubs'
 
     def handle(self, *args, **kwargs):
-        pubs = Pub.objects.all()
+        """
+        # london-ish
+        51.6225941,-0.4041025
+        51.3876345,0.0742792
+        """
+        # pubs = Pub.objects.filter(address__icontains="london") #.order_by('-pk')
+        pubs = Pub.objects.filter(
+                local_authority__name__in=[# "Westminster",
+                    "Kensington and Chelsea",
+                    # "Hammersmith and Fulham",
+                    # "Camden"
+                    ]) #.order_by('-pk')
+                # Q(latitude__lte=51.6225941) &
+                # Q(latitude__gt=51.3876345) &
+                # Q(longitude__lte=0.0742792) &
+                # Q(longitude__gt=-0.4041025))  #.order_by('-pk')
         print(f"{len(pubs)=}")
+        # return
 
         count = 0
         skipping = 0
         writing = 0
         for pub in pubs:
-            print(f"{count=}, {skipping=}, {writing=}")
             pub_location = (pub.latitude, pub.longitude)
             distances_to_others = []
 
             for other_pub in pubs:
                 count += 1
+                print(f"{count=}, {skipping=}, {writing=}")
+
+                """
                 """
                 if Distance.objects.filter(Q(pub1=pub, pub2=other_pub) | Q(pub2=pub, pub1=other_pub)).exists():
                     skipping += 1
                     continue
                 """
+                """
+
                 if pub != other_pub:
                     other_location = (other_pub.latitude, other_pub.longitude)
                     absolute_distance = geodesic(pub_location, other_location).meters

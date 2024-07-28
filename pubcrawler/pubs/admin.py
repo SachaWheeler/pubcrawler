@@ -9,6 +9,7 @@ class PubAdmin(admin.ModelAdmin):
     search_fields = ('name', 'address', 'postcode', )
     list_filter = ('local_authority',)
     ordering = ('name',)
+    autocomplete_fields = ('local_authority',)
 
 admin.site.register(Pub, PubAdmin)
 
@@ -16,7 +17,8 @@ admin.site.register(Pub, PubAdmin)
 class DistanceAdmin(admin.ModelAdmin):
     list_display = ('pub1', 'pub2', 'absolute_distance', 'walking_distance')
     search_fields = ('pub1__name', 'pub2__name')
-    # list_filter = ('absolute_distance', 'walking_distance')
+    list_filter = ('pub1__local_authority',)
+    autocomplete_fields = ('pub1', 'pub2')
 
 admin.site.register(Distance, DistanceAdmin)
 
