@@ -21,7 +21,7 @@ class Command(BaseCommand):
                     "Kensington and Chelsea",
                     # "Hammersmith and Fulham",
                     # "Camden"
-                    ]) #.order_by('-pk')
+                    ]).order_by('latitude', 'longitude')
                 # Q(latitude__lte=51.6225941) &
                 # Q(latitude__gt=51.3876345) &
                 # Q(longitude__lte=0.0742792) &
