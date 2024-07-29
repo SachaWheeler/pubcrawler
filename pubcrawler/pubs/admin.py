@@ -5,6 +5,7 @@ from .models import Pub, Distance, LocalAuthority
 
 class PubAdmin(admin.ModelAdmin):
     list_display = ('name', 'address', 'postcode', 'latitude', 'longitude',
+            'location',
             'local_authority')
     search_fields = ('name', 'address', 'postcode', )
     list_filter = ('local_authority',)
