@@ -52,6 +52,9 @@ DATABASES = {
         default="postgres:///pubcrawler",
     ),
 }
+#GIS stuff
+DATABASES["default"]["ENGINE"] = 'django.contrib.gis.db.backends.postgis'
+
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -75,6 +78,8 @@ DJANGO_APPS = [
     # "django.contrib.humanize", # Handy template tags
     "django.contrib.admin",
     "django.forms",
+
+    'django.contrib.gis',  # GIS
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",

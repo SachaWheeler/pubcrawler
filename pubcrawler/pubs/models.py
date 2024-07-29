@@ -1,5 +1,7 @@
-from django.db import models
+# from django.db import models
+from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
+from django.contrib.gis.geos import Point
 
 
 class LocalAuthority(models.Model):
@@ -20,6 +22,8 @@ class Pub(models.Model):
     longitude = models.FloatField(db_index=True)
     local_authority = models.ForeignKey(LocalAuthority,
             on_delete=models.CASCADE, related_name='pubs', null=True)
+    location = models.PointField(geography=True, default=Point(0.0, 0.0))
+
 
     def __str__(self):
         return self.name

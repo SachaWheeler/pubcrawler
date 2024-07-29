@@ -5,29 +5,34 @@ from django.core.management.base import BaseCommand
 from pubs.models import Pub, Distance
 from django.db.models import Q
 from os.path import exists
+import time
 
 
 class Command(BaseCommand):
     help = 'Calculate distances between pubs'
 
     def handle(self, *args, **kwargs):
-        # pubs = Pub.objects.filter(address__icontains="london") #.order_by('-pk')
+        pubs = Pub.objects.filter(address__iendswith=", london")
+        """
         pubs = Pub.objects.filter(
                 local_authority__name__in=["Westminster",
                     "Kensington and Chelsea",
                     "Islington",
                     "Hammersmith and Fulham",
-                    # "Camden"
-                    ]).order_by('pk')
+                    "Camden"
+                    ])
+        """
         print(f"{len(pubs)=}")
         # return
 
         skipping = 0
-        graph_file = "/home/sacha/work/pubcrawler/demo/maps/London.graphml";
+        graph_file = "/home/sacha/work/pubcrawler/demo/maps/2_London.graphml"
         if exists(graph_file):
             print(f"Loading mapfile: {graph_file}")
+            st = int(time.time())
             G = ox.load_graphml(graph_file)
-            print("mapfile loaded")
+            et = int(time.time())
+            print(f'mapfile loaded: {et - st} seconds')
         else:
             print(f"can't open {graph_file}")
             return
@@ -35,15 +40,15 @@ class Command(BaseCommand):
         for pub in pubs:
             pub_location = (pub.latitude, pub.longitude)
 
-            delta = 0.02
+            skip_pubs = [pub.id]  # exclude itself
+            skip_pubs.extend([distance.pub2.id for distance in Distance.objects.filter(pub1=pub)])
+            skip_pubs.extend([distance.pub1.id for distance in Distance.objects.filter(pub2=pub)])
+
+            delta = 0.01
             lat_min = pub.latitude  - delta
             lat_max = pub.latitude  + delta
             lon_min = pub.longitude - delta
             lon_max = pub.longitude + delta
-
-            skip_pubs = [distance.pub2.id for distance in Distance.objects.filter(pub1=pub)]
-            skip_pubs.extend([distance.pub1.id for distance in Distance.objects.filter(pub2=pub)])
-            skip_pubs.extend([pub.id])  # exclude itself
 
             other_pubs = Pub.objects.filter(
                 Q(latitude__lte=lat_max) &
@@ -63,7 +68,7 @@ class Command(BaseCommand):
                 absolute_distance = great_circle(pub_location, other_location).meters
                 print(f"    {other_pub}, {absolute_distance:,.0f}m")
 
-                if absolute_distance <= 2000:
+                if 1 <= absolute_distance <= 1000:
                     # Calculate walking distance using osmnx
                     if not G:
                         print("no G")
@@ -71,7 +76,8 @@ class Command(BaseCommand):
                     orig_node = ox.nearest_nodes(G, pub.longitude, pub.latitude)
                     dest_node = ox.nearest_nodes(G, other_pub.longitude, other_pub.latitude)
                     try:
-                        walking_distance = nx.shortest_path_length(G, orig_node, dest_node, weight='length')
+                        walking_distance = nx.shortest_path_length(G, orig_node, dest_node,
+                                weight='length')
                     except nx.NetworkXNoPath:
                         walking_distance = None
 
