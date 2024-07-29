@@ -4,6 +4,7 @@ from geopy.distance import geodesic, great_circle
 from django.core.management.base import BaseCommand
 from pubs.models import Pub, Distance
 from django.db.models import Q
+from os.path import exists
 
 
 class Command(BaseCommand):
@@ -12,16 +13,25 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         # pubs = Pub.objects.filter(address__icontains="london") #.order_by('-pk')
         pubs = Pub.objects.filter(
-                local_authority__name__in=[#"Westminster",
-                    # "Kensington and Chelsea",
+                local_authority__name__in=["Westminster",
+                    "Kensington and Chelsea",
                     "Islington",
-                    # "Hammersmith and Fulham",
+                    "Hammersmith and Fulham",
                     # "Camden"
-                    ]).order_by('-pk')
+                    ]).order_by('pk')
         print(f"{len(pubs)=}")
         # return
 
         skipping = 0
+        graph_file = "/home/sacha/work/pubcrawler/demo/maps/London.graphml";
+        if exists(graph_file):
+            print(f"Loading mapfile: {graph_file}")
+            G = ox.load_graphml(graph_file)
+            print("mapfile loaded")
+        else:
+            print(f"can't open {graph_file}")
+            return
+
         for pub in pubs:
             pub_location = (pub.latitude, pub.longitude)
 
@@ -55,7 +65,9 @@ class Command(BaseCommand):
 
                 if absolute_distance <= 2000:
                     # Calculate walking distance using osmnx
-                    G = ox.graph_from_point(pub_location, dist=1000, network_type='walk')
+                    if not G:
+                        print("no G")
+                        G = ox.graph_from_point(pub_location, dist=1000, network_type='walk')
                     orig_node = ox.nearest_nodes(G, pub.longitude, pub.latitude)
                     dest_node = ox.nearest_nodes(G, other_pub.longitude, other_pub.latitude)
                     try:
