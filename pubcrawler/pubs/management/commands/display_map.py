@@ -15,8 +15,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
 
-        # graph_file = "/home/sacha/work/pubcrawler/demo/maps/2_London.graphml"
-        graph_file = "/home/sacha/work/pubcrawler/demo/maps/London_central.graphml"
+        graph_file = "/home/sacha/work/pubcrawler/demo/maps/2_London.graphml"
+        # graph_file = "/home/sacha/work/pubcrawler/demo/maps/London_central.graphml"
 
         if exists(graph_file):
             print(f"Loading mapfile: {graph_file}")

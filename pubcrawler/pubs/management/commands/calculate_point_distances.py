@@ -14,8 +14,7 @@ class Command(BaseCommand):
     help = 'Calculate distances between pubs'
 
     def handle(self, *args, **kwargs):
-        """
-        pubs = Pub.objects.filter(address__iendswith=", london")
+        pubs = Pub.objects.all()
         """
         # Distance.objects.all().delete()
         # return
@@ -23,26 +22,28 @@ class Command(BaseCommand):
         pubs = Pub.objects.filter(
                 local_authority__name__in=["Westminster",
                     "Kensington and Chelsea",
-                    # "Islington",
+                    "Islington",
                     "Hammersmith and Fulham",
-                    # "Camden"
+                    "Camden"
                     ])
+        """
 
         print(f"{len(pubs)=}")
         # return
 
         skipping = 0
-        # graph_file = "/home/sacha/work/pubcrawler/demo/maps/London_central.graphml"
-        graph_file = "/home/sacha/work/pubcrawler/demo/maps/2_London.graphml"
+        #graph_file = "/home/sacha/work/pubcrawler/demo/maps/London_central.graphml"
+        graph_file = "" #/home/sacha/work/pubcrawler/demo/maps/2_London.graphml"
+        local_mapfile = False
+        ox.settings.use_cache = True
+
         if exists(graph_file):
             print(f"Loading mapfile: {graph_file}")
             st = int(time.time())
             G = ox.load_graphml(graph_file)
             et = int(time.time())
             print(f'mapfile loaded: {et - st} seconds')
-        else:
-            print(f"can't open {graph_file}")
-            return
+            local_mapfile = True
 
         DIST = 1000
         WALKING_DIST = 600
@@ -63,6 +64,8 @@ class Command(BaseCommand):
                 )[:MAX_NEAREST]
 
             print(f"{pub}, {pub.address}, {len(other_pubs)}")
+            if len(other_pubs) > 0 and not local_mapfile:
+                G = ox.graph_from_point(pub_location, dist=DIST, network_type='walk')
             count = 0
             writing = 0
             for other_pub in other_pubs:
@@ -70,21 +73,17 @@ class Command(BaseCommand):
 
                 if Distance.objects.filter(
                     Q(
-                        Q(pub1=pub) & Q(pub2=other_pub) |
+                        Q(pub1=pub) & Q(pub2=other_pub)
+                    ) | Q(
                         Q(pub1=other_pub) & Q(pub2=pub)
                     )
                 ).exists():
                     continue
-                # other_location = (other_pub.latitude, other_pub.longitude)
                 other_location = (other_pub.latitude, other_pub.longitude)
                 absolute_distance = great_circle(pub_location, other_location).meters
                 print(f"    {other_pub}, {absolute_distance:,.0f}m")
 
                 if 5 <= absolute_distance <= WALKING_DIST:
-                    # Calculate walking distance using osmnx
-                    if not G:
-                        print("no G")
-                        G = ox.graph_from_point(pub_location, dist=DIST, network_type='walk')
                     orig_node = ox.nearest_nodes(G, pub.longitude, pub.latitude)
                     dest_node = ox.nearest_nodes(G, other_pub.longitude, other_pub.latitude)
                     try:

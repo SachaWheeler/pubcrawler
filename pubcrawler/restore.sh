@@ -53,12 +53,11 @@ echo "migrating (if necessary)"
 migrate=$SECONDS
 
 echo "Done"
-say -v Kate "Done restoring database"
+say -v Kate "Complete"
 end=`date +%s`
 
 echo
 if [ $local_dump -gt 0 ];  then echo "local dump : ${local_dump} secs"; fi
-if [ $prod_backup -gt 0 ]; then echo "prod backup: ${prod_backup} secs"; fi
 if [ $download -gt 0 ];    then echo "download   : ${download} secs"; fi
 if [ $restore -gt 0 ];     then echo "restore    : ${restore} secs"; fi
 if [ $migrate -gt 0 ];     then echo "migrate    : ${migrate} secs"; fi
