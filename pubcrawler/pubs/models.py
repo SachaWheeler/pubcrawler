@@ -18,11 +18,19 @@ class Pub(models.Model):
     postcode = models.CharField(max_length=20)
     easting = models.IntegerField()
     northing = models.IntegerField()
-    latitude = models.FloatField(db_index=True)
-    longitude = models.FloatField(db_index=True)
+    # latitude = models.FloatField(db_index=True)
+    # longitude = models.FloatField(db_index=True)
     local_authority = models.ForeignKey(LocalAuthority,
             on_delete=models.CASCADE, related_name='pubs', null=True)
     location = models.PointField(geography=True, default=Point(0.0, 0.0))
+
+    @property
+    def latitude(self):
+        return self.location.y
+
+    @property
+    def longitude(self):
+        return self.location.x
 
 
     def __str__(self):
