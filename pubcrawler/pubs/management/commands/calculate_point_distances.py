@@ -14,8 +14,9 @@ class Command(BaseCommand):
     help = 'Calculate distances between pubs'
 
     def handle(self, *args, **kwargs):
-        pubs = Pub.objects.all()
+        pubs = Pub.objects.filter(address__iendswith=" london").order_by('-pk')
         """
+        pubs = Pub.objects.all()
         # Distance.objects.all().delete()
         # return
 
@@ -33,7 +34,7 @@ class Command(BaseCommand):
 
         skipping = 0
         #graph_file = "/home/sacha/work/pubcrawler/demo/maps/London_central.graphml"
-        graph_file = "" #/home/sacha/work/pubcrawler/demo/maps/2_London.graphml"
+        graph_file = "/home/sacha/work/pubcrawler/demo/maps/2_London.graphml"
         local_mapfile = False
         ox.settings.use_cache = True
 

@@ -1,7 +1,7 @@
 from django.urls import path
-from .views import PubPathView
+from .views import ShortestPathView
 
 urlpatterns = [
-    path('pub-path/', PubPathView.as_view(), name='pub_path'),
+    path('shortest-path/', ShortestPathView.as_view(), name='shortest_path'),
 ]
 

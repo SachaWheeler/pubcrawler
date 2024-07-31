@@ -19,6 +19,7 @@ urlpatterns = [
     # User management
     path("users/", include("pubcrawler.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
+    path("pubs/", include("pubs.urls")),
     # Your stuff: custom urls includes go here
     # ...
     # Media files

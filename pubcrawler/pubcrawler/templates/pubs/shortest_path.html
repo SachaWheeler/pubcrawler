@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shortest Path</title>
+</head>
+<body>
+    <h1>Find the Shortest Path</h1>
+    SACHA           = "51.5007169,-0.1847102"<br />
+    BROMPTON        = "51.4840451,-0.1919901"<br />
+    SPORTING_PAGE   = "51.4848277,-0.1830941"<br />
+    LIZZIE          = "51.5447774,-0.1184278"<br />
+    LOTTIE          = "51.5359589,-0.2059297"<br />
+    EXMOUTH         = "51.5258245,-0.111508"<br />
+    SOHO            = "51.5111286,-0.139059"<br />
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Submit</button>
+    </form>
+
+    {% if route_image %}
+        <h2>Shortest Path Route</h2>
+        <img src="data:image/png;base64,{{ route_image }}" alt="Route Image"/>
+    {% endif %}
+</body>
+</html>
+
