@@ -33,7 +33,7 @@ class ShortestPathView(View):
             end_point = Point(end_lon, end_lat)
             print(f"{start_point.x=}, {start_point.y=} - {end_point.x=}, {end_point.y=}")
 
-            padding = 0 #.01
+            padding = 0.001
             min_lon = min(start_point.x, end_point.x) - padding
             max_lon = max(start_point.x, end_point.x) + padding
             min_lat = min(start_point.y, end_point.y) - padding
@@ -44,27 +44,24 @@ class ShortestPathView(View):
             print(bbox)
 
 
-            print(rf"{min_lat=}, {max_lat=}, {min_lon=}, {max_lon=}")
+            print(f"{min_lat=}, {max_lat=}, {min_lon=}, {max_lon=}")
 
-            # Find the nearest location to the start_point
-            """
-            nearest_location = Pub.objects.annotate(
-                distance=Distance('location', start_point)
-            ).order_by('distance').first()
-            """
+            # bounding box
             pubs = Pub.objects.filter(
                 location__intersects=geom
             )
-            print(f"{len(pubs)=}")
+
+            print(f"{pubs}\n{len(pubs)=}")
             nearest_to_start = pubs.filter(
                 location__distance_lte=(
                     start_point,
-                    D(m=2000)
+                    D(m=1000)
                 )
             ).order_by(
                 GeometryDistance("location", start_point)
             ).first()
             print(f"{nearest_to_start=}, {nearest_to_start.location}")
+
             nearest_to_end = pubs.filter(
                 location__distance_lte=(
                     end_point,
@@ -75,35 +72,18 @@ class ShortestPathView(View):
             ).first()
             print(f"{nearest_to_end=}")
 
-            return
-
-            # if not nearest_location: return JsonResponse({"error": "No locations found in the database"}, status=404)
 
             # Get the coordinates of the nearest point
             nearest_start_coords = (nearest_to_start.location.y, nearest_to_start.location.x)
 
-            # Use osmnx to download the map graph for the area surrounding the start and end points
-            G = ox.graph_from_point(nearest_start_coords, dist=2000, network_type='walk')
-
-            # Find the nearest nodes to the start and end points
-            start_node = ox.distance.nearest_nodes(G, X=start_lon, Y=start_lat)
-            end_node = ox.distance.nearest_nodes(G, X=end_lon, Y=end_lat)
-
-            # Calculate the shortest path
-            route = nx.shortest_path(G, start_node, end_node, weight='length')
-
-            # Plot the route
-            fig, ax = ox.plot_graph_route(G, route, route_linewidth=6, node_size=0)
-
-            # Save the plot to a BytesIO object and encode as base64
-            buf = io.BytesIO()
-            plt.savefig(buf, format='png')
-            buf.seek(0)
-            img_base64 = base64.b64encode(buf.read()).decode('utf-8')
-            buf.close()
+            context = {
+                'form': form,
+                'route_image': '',
+                'test': 'x'
+            }
 
             # Return the rendered template with the image
-            return render(request, self.template_name, {'form': form, 'route_image': img_base64})
+            return render(request, self.template_name, context)
 
         # If form is not valid, re-render the form with errors
         return render(request, self.template_name, {'form': form})

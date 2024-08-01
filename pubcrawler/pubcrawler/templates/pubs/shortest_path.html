@@ -14,11 +14,15 @@
     LOTTIE          = "51.5359589,-0.2059297"<br />
     EXMOUTH         = "51.5258245,-0.111508"<br />
     SOHO            = "51.5111286,-0.139059"<br />
+    START: 51.5121501,-0.1950087<br />
+    END  : 51.4971476,-0.1505806<br />
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit">Submit</button>
     </form>
+
+    <p>{{ test }}</p>
 
     {% if route_image %}
         <h2>Shortest Path Route</h2>
