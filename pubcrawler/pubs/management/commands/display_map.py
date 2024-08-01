@@ -2,7 +2,7 @@ import osmnx as ox
 import networkx as nx
 from geopy.distance import geodesic, great_circle
 from django.core.management.base import BaseCommand
-from pubs.models import Pub, Distance
+from pubs.models import Pub, PubDist
 from django.db.models import Q
 from os.path import exists
 import matplotlib.pyplot as plt

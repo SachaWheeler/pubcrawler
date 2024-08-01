@@ -1,8 +1,8 @@
 from django.core.management.base import BaseCommand
-from django.contrib.gis.geos import Point, Polygon
+from django.contrib.gis.geos import Point, Polygon, GEOSGeometry
 from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance as DD
-from pubs.models import Pub, Distance
+from pubs.models import Pub, PubDist
 
 
 
@@ -21,8 +21,11 @@ class Command(BaseCommand):
 
         start_lat, start_lon, end_lat, end_lon = SACHA[0], SACHA[1], SPORTING_PAGE[0], SPORTING_PAGE[1]
 
-        start_point = Point(start_lon, start_lat)
-        end_point = Point(end_lon, end_lat)
+        # start_point = Point(start_lon, start_lat)
+        start_point = GEOSGeometry(f'POINT({start_lon} {start_lat})', srid=4326)
+
+        # end_point = Point(end_lon, end_lat)
+        end_point = GEOSGeometry(f'POINT({end_lon} {end_lat})', srid=4326)
 
         # Step 1: Filter points within the bounding box
         delta = 0.01
@@ -32,25 +35,37 @@ class Command(BaseCommand):
         max_lon = max(start_lon, end_lon) + delta
 
         bounding_box = Polygon.from_bbox((min_lon, min_lat, max_lon, max_lat))
-        points_within_bbox = Pub.objects.filter(location__intersects=bounding_box)
+        points_within_bbox = Pub.objects.filter(geo_location__intersects=bounding_box)
 
         print(points_within_bbox, len(points_within_bbox))
-        return
+        # return
 
         current_point = start_point
         path = [start_point]
 
         while True:
             # Exclude the current point from the search
+            """
+            # Use PubDist table instead
             nearest_points = points_within_bbox.annotate(
                 distance=DD('location', current_point),
                 to_end=DD('location', end_point)
             ).filter(to_end__lt=DD('location', current_point)).order_by('distance')
+            """
+
+            # Find the Nearest Pub to the current_point
+            nearest_points = points_within_bbox.annotate(
+                    distance=DD("geo_location", current_point)
+                    ).order_by('distance')
+            print(f"{current_point=}, {nearest_points}")
+            break
+
+            # repeat
 
             if not nearest_points.exists():
                 break  # No more points that get closer to the end point
 
-            nearest_point = nearest_points.first().point
+            nearest_point = nearest_points.first().geo_location
 
             # Avoid going back to the same point
             if nearest_point in path:

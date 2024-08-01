@@ -6,7 +6,7 @@ from pubs.models import Pub, PubDist
 from django.db.models import Q
 from os.path import exists
 import time
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import Point, GEOSGeometry
 
 
 class Command(BaseCommand):
@@ -16,11 +16,19 @@ class Command(BaseCommand):
 
         pubs = Pub.objects.all()
         print(f"{len(pubs)=}")
+        # return
         count = 0
         for pub in pubs:
             count += 1
-            pub.location = Point(pub.longitude, pub.latitude)
-            pub.save()
+
+            #print(pub, pub.location, pub.geo_location)
+            if pub.location:
+                # Convert geography Point to a GEOSGeometry (which is a Geometry type)
+                pub.geo_location = GEOSGeometry(pub.location)
+                pub.save()
+                # print(pub, pub.location, pub.geo_location)
+                # break
+
             # break
             if count%100==0:
                 print(f"{count=}")

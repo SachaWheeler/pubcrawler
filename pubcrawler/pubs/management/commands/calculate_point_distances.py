@@ -2,7 +2,7 @@ import osmnx as ox
 import networkx as nx
 from geopy.distance import geodesic, great_circle
 from django.core.management.base import BaseCommand
-from pubs.models import Pub, Distance
+from pubs.models import Pub, PubDist
 from django.db.models import Q
 from os.path import exists
 from django.contrib.gis.measure import Distance as D
@@ -17,7 +17,7 @@ class Command(BaseCommand):
         pubs = Pub.objects.filter(address__iendswith=" london").order_by('-pk')
         """
         pubs = Pub.objects.all()
-        # Distance.objects.all().delete()
+        # PubDist.objects.all().delete()
         # return
 
         pubs = Pub.objects.filter(
@@ -54,14 +54,14 @@ class Command(BaseCommand):
             pub_location = (pub.latitude, pub.longitude)
 
             other_pubs = Pub.objects.filter(
-                location__distance_lte=(
-                    pub.location,
+                geo_location__distance_lte=(
+                    pub.geo_location,
                     D(m=DIST)
                 )
             ).exclude(
                 id=pub.id
             ).order_by(
-                GeometryDistance("location", pub.location)
+                GeometryDistance("geo_location", pub.geo_location)
                 )[:MAX_NEAREST]
 
             print(f"{pub}, {pub.address}, {len(other_pubs)}")
@@ -72,7 +72,7 @@ class Command(BaseCommand):
             for other_pub in other_pubs:
                 count += 1
 
-                if Distance.objects.filter(
+                if PubDist.objects.filter(
                     Q(
                         Q(pub1=pub) & Q(pub2=other_pub)
                     ) | Q(
@@ -98,7 +98,7 @@ class Command(BaseCommand):
                         writing += 1
                         absolute_distance = round(absolute_distance, 2)
                         walking_distance = round(walking_distance, 2)
-                        Distance.objects.update_or_create(
+                        PubDist.objects.update_or_create(
                             pub1=pub,
                             pub2=other_pub,
                             defaults={

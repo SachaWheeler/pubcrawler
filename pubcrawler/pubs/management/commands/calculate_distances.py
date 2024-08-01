@@ -2,7 +2,7 @@ import osmnx as ox
 import networkx as nx
 from geopy.distance import geodesic, great_circle
 from django.core.management.base import BaseCommand
-from pubs.models import Pub, Distance
+from pubs.models import Pub, PubDist
 from django.db.models import Q
 from os.path import exists
 import time
@@ -41,8 +41,8 @@ class Command(BaseCommand):
             pub_location = (pub.latitude, pub.longitude)
 
             skip_pubs = [pub.id]  # exclude itself
-            skip_pubs.extend([distance.pub2.id for distance in Distance.objects.filter(pub1=pub)])
-            skip_pubs.extend([distance.pub1.id for distance in Distance.objects.filter(pub2=pub)])
+            skip_pubs.extend([distance.pub2.id for distance in PubDist.objects.filter(pub1=pub)])
+            skip_pubs.extend([distance.pub1.id for distance in PubDist.objects.filter(pub2=pub)])
 
             delta = 0.01
             lat_min = pub.latitude  - delta
@@ -85,7 +85,7 @@ class Command(BaseCommand):
                         writing += 1
                         absolute_distance = round(absolute_distance, 2)
                         walking_distance = round(walking_distance, 2)
-                        Distance.objects.update_or_create(
+                        PubDist.objects.update_or_create(
                             pub1=pub,
                             pub2=other_pub,
                             defaults={

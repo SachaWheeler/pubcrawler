@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from pubs.models import Pub, Distance
+from pubs.models import Pub, PubDist
 from django.db.models import Q, F
 import time
 from django.contrib.gis.geos import Point
@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
 
-        distances = Distance.objects.filter(pub1__pk__gt=F('pub2__pk'))
+        distances = PubDist.objects.filter(pub1__pk__gt=F('pub2__pk'))
         print(len(distances))
 
         return

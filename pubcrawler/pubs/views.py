@@ -48,33 +48,33 @@ class ShortestPathView(View):
 
             # bounding box
             pubs = Pub.objects.filter(
-                location__intersects=geom
+                geo_location__intersects=geom
             )
 
             print(f"{pubs}\n{len(pubs)=}")
             nearest_to_start = pubs.filter(
-                location__distance_lte=(
+                geo_location__distance_lte=(
                     start_point,
                     D(m=1000)
                 )
             ).order_by(
-                GeometryDistance("location", start_point)
+                GeometryDistance("geo_location", start_point)
             ).first()
-            print(f"{nearest_to_start=}, {nearest_to_start.location}")
+            print(f"{nearest_to_start=}, {nearest_to_start.geo_location}")
 
             nearest_to_end = pubs.filter(
-                location__distance_lte=(
+                geo_location__distance_lte=(
                     end_point,
                     D(m=1000)
                 )
             ).order_by(
-                GeometryDistance("location", end_point)
+                GeometryDistance("geo_location", end_point)
             ).first()
             print(f"{nearest_to_end=}")
 
 
             # Get the coordinates of the nearest point
-            nearest_start_coords = (nearest_to_start.location.y, nearest_to_start.location.x)
+            nearest_start_coords = (nearest_to_start.geo_location.y, nearest_to_start.geo_location.x)
 
             context = {
                 'form': form,
