@@ -4,7 +4,7 @@ from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance
 from pubs.models import Pub, PubDist
 from django.db.models import Q
-from pubs.utils import find_closest_point, find_paths
+from pubs.utils import find_closest_points, find_paths
 
 
 class Command(BaseCommand):
@@ -21,7 +21,9 @@ class Command(BaseCommand):
         EXMOUTH         = (51.5258245,-0.111508)
         SOHO            = (51.5111286,-0.139059)
 
-        start_lat, start_lon, end_lat, end_lon = SACHA[0], SACHA[1], SPORTING_PAGE[0], SPORTING_PAGE[1]
+        start, end = SACHA, SOHO
+
+        start_lat, start_lon, end_lat, end_lon = start[0], start[1], end[0], end[1]
 
         # start_point = Point(start_lon, start_lat)
         start_point = GEOSGeometry(f'POINT({start_lon} {start_lat})', srid=4326)
@@ -54,11 +56,24 @@ class Command(BaseCommand):
         remaining_distance = total_journey_distance
 
         # Find the paths
-        path = find_paths(pubs_within_bbox, start_point, end_point)
+        # path = find_paths(pubs_within_bbox, start_point, end_point)
+        shortest_paths = find_paths(
+                pubs_within_bbox,
+                start_point, end_point,
+                max_paths=3)
 
-        # Output the path
+        print(shortest_paths)
+        # Display the paths
+        for idx, (total_distance, path) in enumerate(shortest_paths):
+            # print(f"Path {idx + 1}:")
+            for point, dist in path:
+                print(f"  {pub_point[point]}, {dist.m:,.0f} meters")
+            print(f"  Total Path Distance: {total_distance.m:,.0f} meters\n")
+
+        """
         for point in path:
             print(pub_point[point])
+        """
 
 
 
