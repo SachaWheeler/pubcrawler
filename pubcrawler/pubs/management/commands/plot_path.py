@@ -21,7 +21,7 @@ class Command(BaseCommand):
         EXMOUTH         = (51.5258245,-0.111508)
         SOHO            = (51.5111286,-0.139059)
 
-        start, end = SACHA, SOHO
+        start, end = SACHA, LIZZIE
 
         start_lat, start_lon, end_lat, end_lon = start[0], start[1], end[0], end[1]
 
@@ -46,24 +46,16 @@ class Command(BaseCommand):
         bounding_box = Polygon.from_bbox((min_lon, min_lat, max_lon, max_lat))
         pubs_within_bbox = Pub.objects.filter(geo_location__intersects=bounding_box)
         pub_point = dict([(pub.geo_location, f"{pub.name}, {pub.address}") for pub in pubs_within_bbox])
-        # print(pub_point)
-
-        # print(pubs_within_bbox, f"{len(pubs_within_bbox)=}")
-        # print()
-        # return
 
         current_point = start_point
         remaining_distance = total_journey_distance
 
         # Find the paths
-        # path = find_paths(pubs_within_bbox, start_point, end_point)
         shortest_paths = find_paths(
                 pubs_within_bbox,
                 start_point, end_point,
                 max_paths=3)
 
-        print(shortest_paths)
-        # Display the paths
         for idx, (total_distance, path) in enumerate(shortest_paths):
             # print(f"Path {idx + 1}:")
             for point, dist in path:
