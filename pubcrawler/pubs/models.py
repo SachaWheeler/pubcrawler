@@ -1,5 +1,5 @@
-# from django.db import models
-from django.contrib.gis.db import models
+from django.db import models
+from django.contrib.gis.db import models as gis_models
 from django.core.exceptions import ValidationError
 from django.contrib.gis.geos import Point
 
@@ -23,7 +23,7 @@ class Pub(models.Model):
             on_delete=models.CASCADE, related_name='pubs', null=True)
 
     # location = models.PointField(geography=True, default=Point(0.0, 0.0))
-    geo_location = models.PointField(geography=False, default=Point(0.0, 0.0))
+    geo_location = gis_models.PointField(geography=False, default=Point(0.0, 0.0))
 
     @property
     def latitude(self):
@@ -36,6 +36,8 @@ class Pub(models.Model):
 
     def __str__(self):
         return self.name
+
+    objects = models.Manager()
 
 
 class PubDistManager(models.Manager):
