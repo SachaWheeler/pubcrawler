@@ -21,7 +21,7 @@ class Command(BaseCommand):
         EXMOUTH         = (51.5258245,-0.111508)
         SOHO            = (51.5111286,-0.139059)
 
-        start, end = SACHA, LIZZIE
+        start, end = SACHA, BROMPTON
 
         start_lat, start_lon, end_lat, end_lon = start[0], start[1], end[0], end[1]
 
