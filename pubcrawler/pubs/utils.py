@@ -19,8 +19,9 @@ def convert_to_geometry(point=None):
 def find_closest_points(pubs_within_bbox, current_point, end_point, n=3):
     # Find the `n` closest points to current_point that are closer to end_point
     if Pub.objects.filter(geo_location=current_point).exists():
-        print("point in DB")
+        # print("point in DB")
         end_point_proj = convert_to_geometry(end_point)
+
         current_pub = Pub.objects.filter(geo_location=current_point).first()
         current_pub_proj = convert_to_geometry(current_pub.geo_location)
 
@@ -32,12 +33,10 @@ def find_closest_points(pubs_within_bbox, current_point, end_point, n=3):
         closest_points = []
 
         for pub in sorted_closest_pubs:
-            print(f"{pub[1]=}")
+            # print(f"{pub[1]=}")
             next_pub_proj = convert_to_geometry(pub[0].geo_location)
-            print(f"{next_pub_proj.distance(end_point_proj)=}")
-            print(f"{current_pub_proj.distance(end_point_proj)=}")
-            print(f"{next_pub_proj.distance(end_point_proj) - current_pub_proj.distance(end_point_proj)=}")
             if abs(next_pub_proj.distance(end_point_proj)) < abs(current_pub_proj.distance(end_point_proj)):
+                print(current_pub, ' - ',  pub[0])
                 pub_obj = SimpleNamespace(
                     name=pub[0].name,
                     address=pub[0].address,
@@ -61,7 +60,7 @@ def find_paths(pubs_within_bbox, start_point, end_point, max_paths=4):
     # Priority queue to store paths (by total distance)
     priority_queue = []
     initial_closest_points = find_closest_points(pubs_within_bbox, start_point, end_point, n=3)
-    print(initial_closest_points)
+    print(f"{initial_closest_points=}")
 
     # Initialize the queue with paths starting from the 3 closest points to the start_point
     for loc in initial_closest_points:

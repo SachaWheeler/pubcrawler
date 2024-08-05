@@ -55,6 +55,7 @@ class Command(BaseCommand):
                 pubs_within_bbox,
                 start_point, end_point,
                 max_paths=3)
+        print(f"{shortest_paths=}")
 
         for idx, (total_distance, path) in enumerate(shortest_paths):
             # print(f"Path {idx + 1}:")
